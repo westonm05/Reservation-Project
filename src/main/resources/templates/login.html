@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"> <!-- enables th: attributes -->
+<head>
+    <title>Log in</title>
+</head>
+<body>
+
+<h1>Log in</h1>
+
+<!-- these read the URL. Security adds ?error on a failed login -->
+<p th:if="${param.error}" style="color: red;">Invalid email or password.</p> <!-- US-2: vague on purpose, doesn't say which field was wrong -->
+<p th:if="${param.logout}" style="color: green;">You have been logged out.</p>
+<p th:if="${param.registered}" style="color: green;">Account created. Please log in.</p> <!-- set by the redirect after registering -->
+
+<!-- th:action so the CSRF token gets added, otherwise the login silently fails -->
+<form method="post" th:action="@{/login}">
+    <p>
+        <label>Email</label><br>
+        <input type="email" name="username" required> <!-- must be "username" - Security looks for that exact name -->
+    </p>
+    <p>
+        <label>Password</label><br>
+        <input type="password" name="password" required> <!-- Security compares this against the stored hash -->
+    </p>
+    <button type="submit">Log in</button>
+</form>
+
+<p>No account? <a href="/register">Register</a></p>
+
+</body>
+</html>

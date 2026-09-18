@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"> <!-- enables th: attributes, without this they're silently ignored -->
+<head>
+    <title>Register</title>
+</head>
+<body>
+
+<h1>Create an account</h1>
+
+<!-- only shows if the controller put an "error" in the Model -->
+<p th:if="${error}" th:text="${error}" style="color: red;"></p>
+
+<!-- th:action instead of action so Thymeleaf adds the CSRF token Security requires -->
+<form method="post" th:action="@{/register}">
+    <p>
+        <label>Full name</label><br>
+        <input type="text" name="fullName" required> <!-- name must match @RequestParam in AuthController -->
+    </p>
+    <p>
+        <label>Email</label><br>
+        <input type="email" name="email" required> <!-- type=email makes the browser check the format -->
+    </p>
+    <p>
+        <label>Password</label><br>
+        <input type="password" name="password" required> <!-- type=password hides what's typed -->
+    </p>
+    <p>
+        <label>Confirm password</label><br>
+        <input type="password" name="confirmPassword" required> <!-- controller checks these two match -->
+    </p>
+    <button type="submit">Register</button>
+</form>
+
+<p>Already have an account? <a href="/login">Log in</a></p>
+
+</body>
+</html>
