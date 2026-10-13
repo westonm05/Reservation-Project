@@ -1,0 +1,37 @@
+flowchart TB
+    browser(["Web browser<br/>(student, faculty, lab manager)"])
+
+    subgraph app["LabLink - Spring Boot application (one deployable JAR)"]
+        direction TB
+        subgraph sec["Security filter chain (Spring Security)"]
+            authn["Form login + BCrypt<br/>LabLinkUserDetailsService"]
+            authz["URL rules by role<br/>SecurityConfig"]
+        end
+        subgraph pres["Presentation layer - web package"]
+            ctrls["Controllers<br/>Auth · Home · Equipment ·<br/>Reservation · Approval · Inventory"]
+            views["Thymeleaf templates<br/>+ lablink.css"]
+        end
+        subgraph biz["Business layer - service package"]
+            us["UserService"]
+            es["EquipmentService"]
+            rs["ReservationService<br/>(conflict + approval rules)"]
+        end
+        subgraph data["Data access layer - repository package"]
+            repos["Spring Data JPA repositories<br/>User · Lab · EquipmentCategory ·<br/>Equipment · Reservation"]
+            model["JPA entities - model package"]
+        end
+    end
+
+    db[("Relational database<br/>H2 (dev/test) · MySQL 8 (deployed)")]
+
+    browser -- "HTTPS: GET pages / POST forms" --> sec
+    sec --> ctrls
+    ctrls -- "renders" --> views
+    views -- "HTML" --> browser
+    ctrls --> us & es & rs
+    rs --> es
+    rs --> us
+    us & es & rs --> repos
+    repos -. "maps" .- model
+    repos -- "JDBC / SQL" --> db
+    authn --> repos
