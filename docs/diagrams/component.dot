@@ -1,0 +1,49 @@
+// LabLink component diagram. Regenerate with:
+//   dot -Tsvg component.dot -o component.svg && dot -Tpng -Gdpi=150 component.dot -o component.png
+digraph LabLink {
+  graph [rankdir=TB, fontname="Helvetica", fontsize=13, nodesep=0.35, ranksep=0.55, compound=true, bgcolor="white", pad=0.3];
+  node  [shape=component, style="filled", fillcolor="#eef2fb", color="#3b5ba5", fontname="Helvetica", fontsize=12, margin="0.15,0.08"];
+  edge  [color="#444444", fontname="Helvetica", fontsize=10, arrowsize=0.8];
+
+  browser [shape=box, style="rounded,filled", fillcolor="#ffffff", label="Web browser\n(Student · Faculty · Lab Manager)"];
+  db [shape=cylinder, fillcolor="#fff7e6", color="#a15c07", label="Relational database\nH2 (dev/test) · MySQL 8 (prod)"];
+
+  subgraph cluster_app {
+    label="LabLink Spring Boot application (single deployable JAR)"; style="rounded"; color="#888888"; fontsize=13;
+
+    security [fillcolor="#fdecea", color="#b42318", label="Security filter chain\nSecurityConfig · LabLinkUserDetailsService\nlogin · logout · role checks · CSRF"];
+
+    subgraph cluster_pres {
+      label="Presentation layer (Spring MVC controllers + Thymeleaf views)"; style="rounded,filled"; fillcolor="#f7f9fd"; color="#3b5ba5";
+      authC [label="AuthController"]; homeC [label="HomeController"]; labC [label="LabController"];
+      eqC [label="EquipmentController"]; resC [label="ReservationController"];
+      views [shape=note, fillcolor="#ffffff", label="Thymeleaf\ntemplates"];
+    }
+    subgraph cluster_bus {
+      label="Business layer (services)"; style="rounded,filled"; fillcolor="#f3faf5"; color="#1d7a46";
+      node [fillcolor="#e7f5ec", color="#1d7a46"];
+      userS [label="UserService"]; invS [label="InventoryService"];
+      resS [label="ReservationService\n(conflict check, approval rules)"];
+    }
+    subgraph cluster_per {
+      label="Persistence layer (Spring Data JPA repositories)"; style="rounded,filled"; fillcolor="#fbf8f2"; color="#a15c07";
+      node [fillcolor="#fff4e0", color="#a15c07"];
+      userR [label="UserRepository"]; labR [label="LabRepository"];
+      eqR [label="EquipmentRepository"]; resR [label="ReservationRepository"];
+    }
+  }
+
+  browser -> security [label=" HTTP requests /\n HTML pages"];
+  security -> resC [lhead=cluster_pres, label=" authorized\n requests"];
+  security -> userR [style=dashed, label=" loads user\n at login", constraint=false];
+
+  authC -> userS; homeC -> userS; homeC -> resS;
+  labC -> invS; eqC -> invS;
+  resC -> resS; resC -> invS; resC -> userS;
+  // every controller renders a Thymeleaf template (not drawn, to keep the diagram readable)
+
+  userS -> userR; invS -> labR; invS -> eqR;
+  resS -> resR; resS -> labR; resS -> eqR;
+
+  labR -> db [ltail=cluster_per, label=" JDBC / SQL"];
+}

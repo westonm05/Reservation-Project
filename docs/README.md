@@ -9,4 +9,4 @@
 | Working prototype demonstrating core architecture | [`src/`](../src) — run instructions in the [main README](../README.md) |
 | Updated project plan | [project-plan.md](project-plan.md) |
 
-Diagrams are written in Mermaid and render directly on GitHub.
+Diagrams are written in Mermaid (render directly on GitHub); the component diagram is Graphviz (`diagrams/component.dot`). All deliverables combined: [LabLink_Milestone2_Design.pdf](LabLink_Milestone2_Design.pdf).

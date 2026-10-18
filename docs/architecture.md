@@ -59,59 +59,24 @@ See ADR-0001 for the recorded decision.
 
 ## 3. Component diagram
 
-```mermaid
-flowchart TB
-    browser["Web browser<br/>(Student / Faculty / Lab Manager)"]
+![LabLink component diagram](diagrams/component.svg)
 
-    subgraph app["LabLink Spring Boot application (single JAR)"]
-        direction TB
-        security["Security filter chain<br/>SecurityConfig, LabLinkUserDetailsService<br/>login · logout · role checks · CSRF"]
+Source: [`diagrams/component.dot`](diagrams/component.dot) (Graphviz). Every controller also renders a Thymeleaf template from `src/main/resources/templates`.
 
-        subgraph presentation["Presentation layer"]
-            authC["AuthController"]
-            homeC["HomeController"]
-            labC["LabController"]
-            eqC["EquipmentController"]
-            resC["ReservationController"]
-            views["Thymeleaf templates<br/>(views)"]
-        end
+**Which component calls which**
 
-        subgraph business["Business layer"]
-            userS["UserService"]
-            invS["InventoryService"]
-            resS["ReservationService<br/>(conflict check, approval rules)"]
-        end
+| Controller | Services it uses |
+|---|---|
+| AuthController | UserService |
+| HomeController | UserService, ReservationService |
+| LabController, EquipmentController | InventoryService |
+| ReservationController | ReservationService, InventoryService, UserService |
 
-        subgraph persistence["Persistence layer (Spring Data JPA)"]
-            userR["UserRepository"]
-            labR["LabRepository"]
-            eqR["EquipmentRepository"]
-            resR["ReservationRepository"]
-        end
-    end
-
-    db[("Relational database<br/>H2 (dev/test) · MySQL 8 (production)")]
-
-    browser -- "HTTPS requests / HTML pages" --> security
-    security --> presentation
-    authC --> userS
-    homeC --> userS
-    homeC --> resS
-    labC --> invS
-    eqC --> invS
-    resC --> resS
-    resC --> invS
-    resC --> userS
-    presentation --> views
-    security -. "loads user by email" .-> userR
-    userS --> userR
-    invS --> labR
-    invS --> eqR
-    resS --> resR
-    resS --> labR
-    resS --> eqR
-    persistence -- "JDBC / SQL" --> db
-```
+| Service | Repositories it uses |
+|---|---|
+| UserService | UserRepository (also used by LabLinkUserDetailsService at login) |
+| InventoryService | LabRepository, EquipmentRepository |
+| ReservationService | ReservationRepository, LabRepository, EquipmentRepository |
 
 **How a request flows:** the browser sends a request → the security filter chain checks that the user is logged in and has the right role → a controller validates the form and calls a service → the service applies the business rules and uses repositories to read/write data inside a transaction → the controller picks a Thymeleaf template, which renders HTML back to the browser.
 
