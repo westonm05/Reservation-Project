@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('Request reservation')}"></head>
+<body>
+<header th:replace="~{fragments :: nav}"></header>
+<main class="narrow">
+    <h1>Request a reservation</h1>
+    <p th:if="${resourceName}">For: <strong th:text="${resourceName}"></strong></p>
+    <p class="flash err" th:if="${error}" th:text="${error}"></p>
+
+    <form th:action="@{/reservations}" th:object="${form}" method="post" class="card">
+        <input type="hidden" th:field="*{labId}">
+        <input type="hidden" th:field="*{equipmentId}">
+        <label>Start <input type="datetime-local" th:field="*{startTime}"><span class="field-err" th:errors="*{startTime}"></span></label>
+        <label>End <input type="datetime-local" th:field="*{endTime}"><span class="field-err" th:errors="*{endTime}"></span></label>
+        <label>Purpose <input type="text" th:field="*{purpose}" placeholder="e.g. CS450 team meeting"><span class="field-err" th:errors="*{purpose}"></span></label>
+        <button type="submit">Submit request</button>
+        <a th:href="@{/labs}">Cancel</a>
+    </form>
+</main>
+</body>
+</html>

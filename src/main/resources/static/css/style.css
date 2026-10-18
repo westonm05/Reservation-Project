@@ -1,0 +1,40 @@
+/* Minimal styling for the prototype. Dawson's UI work will replace this. */
+:root {
+    --bg: #f6f7f9; --fg: #1d2330; --muted: #6b7280; --card: #fff; --line: #e3e6eb;
+    --accent: #1f5fbf; --ok: #1d7a46; --err: #b42318; --warn: #a15c07;
+}
+* { box-sizing: border-box; }
+body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; background: var(--bg); color: var(--fg); }
+main { max-width: 1000px; margin: 0 auto; padding: 24px 16px; }
+main.narrow { max-width: 460px; }
+a { color: var(--accent); }
+.topbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;
+          padding: 12px 16px; background: var(--card); border-bottom: 1px solid var(--line); }
+.topbar nav { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+.brand { font-weight: 700; font-size: 1.2rem; text-decoration: none; color: var(--fg); }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+form.card label { display: block; margin-bottom: 12px; font-weight: 600; }
+form.card label.check { font-weight: 400; }
+input, select, textarea { display: block; width: 100%; margin-top: 4px; padding: 8px; font: inherit;
+                          border: 1px solid var(--line); border-radius: 6px; background: #fff; }
+input[type=checkbox] { display: inline; width: auto; }
+button, .button { background: var(--accent); color: #fff; border: 0; border-radius: 6px; padding: 8px 14px;
+                  font: inherit; cursor: pointer; text-decoration: none; display: inline-block; }
+button.secondary { background: #6b7280; }
+button.link { background: none; color: var(--accent); padding: 0; }
+button.link.danger { color: var(--err); }
+form.inline { display: inline; }
+table { width: 100%; border-collapse: collapse; background: var(--card); border: 1px solid var(--line); }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+td.actions { white-space: nowrap; }
+td.actions > * { margin-right: 8px; }
+.flash { padding: 10px 12px; border-radius: 6px; }
+.flash.ok { background: #e7f5ec; color: var(--ok); }
+.flash.err { background: #fdecea; color: var(--err); }
+.field-err { display: block; color: var(--err); font-weight: 400; font-size: .9rem; }
+.hint { color: var(--muted); font-size: .9rem; }
+.badge { font-size: .8rem; padding: 2px 8px; border-radius: 10px; background: #eef1f5; }
+.badge.APPROVED, .badge.AVAILABLE { background: #e7f5ec; color: var(--ok); }
+.badge.PENDING, .badge.MAINTENANCE { background: #fff4e0; color: var(--warn); }
+.badge.REJECTED, .badge.CANCELLED, .badge.RETIRED { background: #fdecea; color: var(--err); }
+@media (max-width: 640px) { table { display: block; overflow-x: auto; } }

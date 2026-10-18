@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('Lab')}"></head>
+<body>
+<header th:replace="~{fragments :: nav}"></header>
+<main class="narrow">
+    <h1 th:text="${lab.id == null} ? 'Add lab' : 'Edit lab'">Lab</h1>
+    <form th:action="@{/labs/save}" th:object="${lab}" method="post" class="card">
+        <input type="hidden" th:field="*{id}">
+        <label>Name <input type="text" th:field="*{name}"><span class="field-err" th:errors="*{name}"></span></label>
+        <label>Building <input type="text" th:field="*{building}"><span class="field-err" th:errors="*{building}"></span></label>
+        <label>Room number <input type="text" th:field="*{roomNumber}"><span class="field-err" th:errors="*{roomNumber}"></span></label>
+        <label>Capacity <input type="number" min="1" th:field="*{capacity}"><span class="field-err" th:errors="*{capacity}"></span></label>
+        <label>Description <textarea th:field="*{description}" rows="3"></textarea></label>
+        <label class="check"><input type="checkbox" th:field="*{active}"> Available for reservations</label>
+        <button type="submit">Save</button>
+        <a th:href="@{/labs}">Cancel</a>
+    </form>
+</main>
+</body>
+</html>

@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('My reservations')}"></head>
+<body>
+<header th:replace="~{fragments :: nav}"></header>
+<main>
+    <h1>My reservations</h1>
+    <div th:replace="~{fragments :: flash}"></div>
+    <p th:if="${#lists.isEmpty(reservations)}">You have no reservations.</p>
+
+    <table th:unless="${#lists.isEmpty(reservations)}">
+        <thead><tr><th>Type</th><th>What</th><th>Start</th><th>End</th><th>Purpose</th><th>Status</th><th></th></tr></thead>
+        <tbody>
+        <tr th:each="r : ${reservations}">
+            <td th:text="${r.resourceType}"></td>
+            <td th:text="${r.resourceName}"></td>
+            <td th:text="${#temporals.format(r.startTime, 'MMM d, yyyy h:mm a')}"></td>
+            <td th:text="${#temporals.format(r.endTime, 'MMM d, yyyy h:mm a')}"></td>
+            <td th:text="${r.purpose}"></td>
+            <td><span th:class="'badge ' + ${r.status}" th:text="${r.status}"></span></td>
+            <td>
+                <form th:if="${r.status.name() == 'PENDING' or r.status.name() == 'APPROVED'}"
+                      th:action="@{/reservations/{id}/cancel(id=${r.id})}" method="post" class="inline">
+                    <button type="submit" class="link danger">Cancel</button>
+                </form>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</main>
+</body>
+</html>

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('Manage requests')}"></head>
+<body>
+<header th:replace="~{fragments :: nav}"></header>
+<main>
+    <h1>Pending requests</h1>
+    <div th:replace="~{fragments :: flash}"></div>
+    <p th:if="${#lists.isEmpty(pending)}">Nothing waiting for review.</p>
+
+    <table th:unless="${#lists.isEmpty(pending)}">
+        <thead><tr><th>Requested by</th><th>What</th><th>Start</th><th>End</th><th>Purpose</th><th></th></tr></thead>
+        <tbody>
+        <tr th:each="r : ${pending}">
+            <td th:text="${r.user.fullName}"></td>
+            <td th:text="${r.resourceName}"></td>
+            <td th:text="${#temporals.format(r.startTime, 'MMM d, yyyy h:mm a')}"></td>
+            <td th:text="${#temporals.format(r.endTime, 'MMM d, yyyy h:mm a')}"></td>
+            <td th:text="${r.purpose}"></td>
+            <td class="actions">
+                <form th:action="@{/reservations/{id}/approve(id=${r.id})}" method="post" class="inline">
+                    <button type="submit">Approve</button>
+                </form>
+                <form th:action="@{/reservations/{id}/reject(id=${r.id})}" method="post" class="inline">
+                    <button type="submit" class="secondary">Reject</button>
+                </form>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+
+    <h2>All reservations</h2>
+    <table>
+        <thead><tr><th>Requested by</th><th>What</th><th>Start</th><th>Status</th><th>Reviewed by</th></tr></thead>
+        <tbody>
+        <tr th:each="r : ${all}">
+            <td th:text="${r.user.fullName}"></td>
+            <td th:text="${r.resourceName}"></td>
+            <td th:text="${#temporals.format(r.startTime, 'MMM d, yyyy h:mm a')}"></td>
+            <td><span th:class="'badge ' + ${r.status}" th:text="${r.status}"></span></td>
+            <td th:text="${r.reviewedBy != null} ? ${r.reviewedBy.fullName} : ''"></td>
+        </tr>
+        </tbody>
+    </table>
+</main>
+</body>
+</html>
