@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<!-- Reusable pieces included by every page with th:replace="~{fragments :: name}" -->
+
+<head th:fragment="head(title)">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${title} + ' · LabLink'">LabLink</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+
+<body>
+
+<header th:fragment="nav" class="topbar">
+    <a class="brand" th:href="@{/}">LabLink</a>
+    <nav sec:authorize="isAuthenticated()">
+        <a th:href="@{/labs}">Labs</a>
+        <a th:href="@{/equipment}">Equipment</a>
+        <a th:href="@{/reservations}">My reservations</a>
+        <a sec:authorize="hasRole('LAB_MANAGER')" th:href="@{/reservations/manage}">Manage requests</a>
+        <form th:action="@{/logout}" method="post" class="inline">
+            <button type="submit" class="link">Log out</button>
+        </form>
+    </nav>
+</header>
+
+<div th:fragment="flash">
+    <p class="flash ok" th:if="${message}" th:text="${message}"></p>
+    <p class="flash err" th:if="${error}" th:text="${error}"></p>
+</div>
+
+</body>
+</html>

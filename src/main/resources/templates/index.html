@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('Dashboard')}"></head>
+<body>
+<header th:replace="~{fragments :: nav}"></header>
+<main>
+    <h1 th:text="'Welcome, ' + ${user.fullName}">Welcome</h1>
+    <p class="hint" th:text="'Signed in as ' + ${user.email} + ' (' + ${user.role} + ')'"></p>
+
+    <div class="card" th:if="${pendingCount != null}">
+        <strong th:text="${pendingCount}">0</strong> reservation request(s) waiting for review.
+        <a th:href="@{/reservations/manage}">Review them</a>
+    </div>
+
+    <h2>Your upcoming reservations</h2>
+    <p th:if="${#lists.isEmpty(myReservations)}">None yet. Browse <a th:href="@{/labs}">labs</a> or <a th:href="@{/equipment}">equipment</a> to make one.</p>
+    <table th:unless="${#lists.isEmpty(myReservations)}">
+        <thead><tr><th>What</th><th>Start</th><th>End</th><th>Status</th></tr></thead>
+        <tbody>
+        <tr th:each="r : ${myReservations}">
+            <td th:text="${r.resourceName}"></td>
+            <td th:text="${#temporals.format(r.startTime, 'MMM d, yyyy h:mm a')}"></td>
+            <td th:text="${#temporals.format(r.endTime, 'MMM d, yyyy h:mm a')}"></td>
+            <td><span th:class="'badge ' + ${r.status}" th:text="${r.status}"></span></td>
+        </tr>
+        </tbody>
+    </table>
+</main>
+</body>
+</html>

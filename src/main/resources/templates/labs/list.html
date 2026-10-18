@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments :: head('Labs')}"></head>
+<body>
+<header th:replace="~{fragments :: nav}"></header>
+<main>
+    <h1>Labs</h1>
+    <div th:replace="~{fragments :: flash}"></div>
+    <p sec:authorize="hasRole('LAB_MANAGER')"><a class="button" th:href="@{/labs/new}">Add lab</a></p>
+
+    <table>
+        <thead><tr><th>Name</th><th>Location</th><th>Capacity</th><th>Description</th><th></th></tr></thead>
+        <tbody>
+        <tr th:each="lab : ${labs}">
+            <td>
+                <span th:text="${lab.name}"></span>
+                <span class="badge REJECTED" th:unless="${lab.active}">Inactive</span>
+            </td>
+            <td th:text="${lab.building} + ' ' + ${lab.roomNumber}"></td>
+            <td th:text="${lab.capacity}"></td>
+            <td th:text="${lab.description}"></td>
+            <td class="actions">
+                <a th:if="${lab.active}" th:href="@{/reservations/new(labId=${lab.id})}">Reserve</a>
+                <th:block sec:authorize="hasRole('LAB_MANAGER')">
+                    <a th:href="@{/labs/{id}/edit(id=${lab.id})}">Edit</a>
+                    <form th:action="@{/labs/{id}/delete(id=${lab.id})}" method="post" class="inline"
+                          onsubmit="return confirm('Delete this lab?')">
+                        <button type="submit" class="link danger">Delete</button>
+                    </form>
+                </th:block>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</main>
+</body>
+</html>

@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('Equipment')}"></head>
+<body>
+<header th:replace="~{fragments :: nav}"></header>
+<main class="narrow">
+    <h1 th:text="${form.id == null} ? 'Add equipment' : 'Edit equipment'">Equipment</h1>
+    <form th:action="@{/equipment/save}" th:object="${form}" method="post" class="card">
+        <input type="hidden" th:field="*{id}">
+        <label>Name <input type="text" th:field="*{name}"><span class="field-err" th:errors="*{name}"></span></label>
+        <label>Serial number <input type="text" th:field="*{serialNumber}"><span class="field-err" th:errors="*{serialNumber}"></span></label>
+        <label>Description <textarea th:field="*{description}" rows="3"></textarea></label>
+        <label>Status
+            <select th:field="*{status}">
+                <option th:each="s : ${statuses}" th:value="${s}" th:text="${s}"></option>
+            </select>
+        </label>
+        <label>Lab
+            <select th:field="*{labId}">
+                <option value="">Portable / none</option>
+                <option th:each="lab : ${labs}" th:value="${lab.id}" th:text="${lab.name}"></option>
+            </select>
+        </label>
+        <button type="submit">Save</button>
+        <a th:href="@{/equipment}">Cancel</a>
+    </form>
+</main>
+</body>
+</html>
