@@ -21,7 +21,8 @@ import java.util.List;
  *  - a reservation must be for the future and end after it starts
  *  - a lab or piece of equipment can't be double-booked
  *  - faculty and lab managers are approved automatically; students wait for a lab manager
- *  - only the owner can cancel, only a lab manager can approve/reject
+ *  - only the owner can cancel or reschedule, only a lab manager can approve/reject
+ *  - only pending reservations can be rescheduled
  */
 @Service
 public class ReservationService {
@@ -46,10 +47,8 @@ public class ReservationService {
             throw new ReservationException("That lab is not currently available for reservations");
         }
         validateTimes(start, end);
-        if (reservationRepository.existsByLabAndStatusInAndStartTimeBeforeAndEndTimeAfter(
-                lab, ReservationStatus.ACTIVE, end, start)) {
-            throw new ReservationException(lab.getName() + " is already booked during that time");
-        }
+        rejectIfBooked(lab.getName(), reservationRepository.existsByLabAndStatusInAndStartTimeBeforeAndEndTimeAfter(
+                lab, ReservationStatus.ACTIVE, end, start));
         Reservation reservation = newReservation(requester, start, end, purpose);
         reservation.setLab(lab);
         return reservationRepository.save(reservation);
@@ -63,10 +62,8 @@ public class ReservationService {
             throw new ReservationException(equipment.getName() + " is not available (" + equipment.getStatus() + ")");
         }
         validateTimes(start, end);
-        if (reservationRepository.existsByEquipmentAndStatusInAndStartTimeBeforeAndEndTimeAfter(
-                equipment, ReservationStatus.ACTIVE, end, start)) {
-            throw new ReservationException(equipment.getName() + " is already booked during that time");
-        }
+        rejectIfBooked(equipment.getName(), reservationRepository.existsByEquipmentAndStatusInAndStartTimeBeforeAndEndTimeAfter(
+                equipment, ReservationStatus.ACTIVE, end, start));
         Reservation reservation = newReservation(requester, start, end, purpose);
         reservation.setEquipment(equipment);
         return reservationRepository.save(reservation);
@@ -85,9 +82,7 @@ public class ReservationService {
     @Transactional
     public void cancel(Long reservationId, User requester) {
         Reservation reservation = get(reservationId);
-        if (!reservation.getUser().getId().equals(requester.getId())) {
-            throw new ReservationException("You can only cancel your own reservations");
-        }
+        requireOwner(reservation, requester, "cancel");
         if (!ReservationStatus.ACTIVE.contains(reservation.getStatus())) {
             throw new ReservationException("Only pending or approved reservations can be cancelled");
         }
@@ -98,24 +93,12 @@ public class ReservationService {
     @Transactional
     public Reservation reschedule(Long reservationId, User requester, LocalDateTime newStart, LocalDateTime newEnd) {
         Reservation reservation = get(reservationId);
-        if (!reservation.getUser().getId().equals(requester.getId())) {
-            throw new ReservationException("You can only reschedule your own reservations");
-        }
+        requireOwner(reservation, requester, "reschedule");
         if (reservation.getStatus() != ReservationStatus.PENDING) {
             throw new ReservationException("Only pending reservations can be rescheduled");
         }
         validateTimes(newStart, newEnd);
-        boolean conflict;
-        if (reservation.getLab() != null) {
-            conflict = reservationRepository.existsByLabAndStatusInAndStartTimeBeforeAndEndTimeAfterAndIdNot(
-                    reservation.getLab(), ReservationStatus.ACTIVE, newEnd, newStart, reservation.getId());
-        } else {
-            conflict = reservationRepository.existsByEquipmentAndStatusInAndStartTimeBeforeAndEndTimeAfterAndIdNot(
-                    reservation.getEquipment(), ReservationStatus.ACTIVE, newEnd, newStart, reservation.getId());
-        }
-        if (conflict) {
-            throw new ReservationException(reservation.getResourceName() + " is already booked during that time");
-        }
+        rejectIfBooked(reservation.getResourceName(), overlapsOtherBookings(reservation, newStart, newEnd));
         reservation.setStartTime(newStart);
         reservation.setEndTime(newEnd);
         return reservation;
@@ -142,6 +125,28 @@ public class ReservationService {
     private Reservation get(Long id) {
         return reservationRepository.findById(id)
                 .orElseThrow(() -> new ReservationException("Reservation not found"));
+    }
+
+    private void requireOwner(Reservation reservation, User user, String action) {
+        if (!reservation.getUser().getId().equals(user.getId())) {
+            throw new ReservationException("You can only " + action + " your own reservations");
+        }
+    }
+
+    private void rejectIfBooked(String resourceName, boolean alreadyBooked) {
+        if (alreadyBooked) {
+            throw new ReservationException(resourceName + " is already booked during that time");
+        }
+    }
+
+    /** Would the reservation, moved to start..end, overlap any OTHER active booking of the same lab/equipment? */
+    private boolean overlapsOtherBookings(Reservation reservation, LocalDateTime start, LocalDateTime end) {
+        if (reservation.getLab() != null) {
+            return reservationRepository.existsByLabAndStatusInAndStartTimeBeforeAndEndTimeAfterAndIdNot(
+                    reservation.getLab(), ReservationStatus.ACTIVE, end, start, reservation.getId());
+        }
+        return reservationRepository.existsByEquipmentAndStatusInAndStartTimeBeforeAndEndTimeAfterAndIdNot(
+                reservation.getEquipment(), ReservationStatus.ACTIVE, end, start, reservation.getId());
     }
 
     private void review(Long reservationId, User manager, ReservationStatus decision) {
