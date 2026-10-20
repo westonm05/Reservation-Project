@@ -31,4 +31,14 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
 
     boolean existsByEquipmentAndStatusInAndStartTimeBeforeAndEndTimeAfter(
             Equipment equipment, Collection<ReservationStatus> statuses, LocalDateTime end, LocalDateTime start);
+
+    /*
+     * Same overlap checks, but skipping one reservation (IdNot). Used when rescheduling,
+     * so a reservation doesn't count as conflicting with its own current time slot.
+     */
+    boolean existsByLabAndStatusInAndStartTimeBeforeAndEndTimeAfterAndIdNot(
+            Lab lab, Collection<ReservationStatus> statuses, LocalDateTime end, LocalDateTime start, Long ignoredId);
+
+    boolean existsByEquipmentAndStatusInAndStartTimeBeforeAndEndTimeAfterAndIdNot(
+            Equipment equipment, Collection<ReservationStatus> statuses, LocalDateTime end, LocalDateTime start, Long ignoredId);
 }

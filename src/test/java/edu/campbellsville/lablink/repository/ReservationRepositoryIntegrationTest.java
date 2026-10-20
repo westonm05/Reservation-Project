@@ -92,6 +92,16 @@ class ReservationRepositoryIntegrationTest {
     }
 
     @Test
+    void overlapQueryCanSkipTheReservationBeingRescheduled() {
+        Reservation mine = save(lab, nine, nine.plusHours(2), ReservationStatus.PENDING);
+
+        boolean takenBySomeoneElse = reservations.existsByLabAndStatusInAndStartTimeBeforeAndEndTimeAfterAndIdNot(
+                lab, ReservationStatus.ACTIVE, nine.plusHours(3), nine.plusHours(1), mine.getId());
+
+        assertThat(takenBySomeoneElse).isFalse();
+    }
+
+    @Test
     void userReservationsAreListedNewestFirst() {
         Reservation early = save(lab, nine, nine.plusHours(1), ReservationStatus.PENDING);
         Reservation late = save(lab, nine.plusDays(1), nine.plusDays(1).plusHours(1), ReservationStatus.PENDING);

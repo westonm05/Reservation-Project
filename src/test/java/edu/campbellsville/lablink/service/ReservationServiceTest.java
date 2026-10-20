@@ -346,6 +346,103 @@ class ReservationServiceTest {
         }
     }
 
+    // ------------------------------------------------------------------ reschedule (written test-first)
+
+    @Nested
+    class Reschedule {
+
+        @Test
+        void ownerMovesPendingReservationToANewTime() {
+            Reservation r = existingReservation(ReservationStatus.PENDING, student);
+            LocalDateTime newStart = start.plusDays(1);
+            LocalDateTime newEnd = newStart.plusHours(3);
+
+            Reservation moved = service.reschedule(50L, student, newStart, newEnd);
+
+            assertThat(moved).isSameAs(r);
+            assertThat(r.getStartTime()).isEqualTo(newStart);
+            assertThat(r.getEndTime()).isEqualTo(newEnd);
+            assertThat(r.getStatus()).isEqualTo(ReservationStatus.PENDING); // still needs approval
+        }
+
+        @Test
+        void reservationDoesNotConflictWithItsOwnCurrentSlot() {
+            // Moving 9-11 to 10-12 overlaps the reservation's own old slot; that must be allowed
+            existingReservation(ReservationStatus.PENDING, student);
+
+            service.reschedule(50L, student, start.plusHours(1), end.plusHours(1));
+
+            verify(reservationRepository).existsByLabAndStatusInAndStartTimeBeforeAndEndTimeAfterAndIdNot(
+                    lab, ReservationStatus.ACTIVE, end.plusHours(1), start.plusHours(1), 50L);
+        }
+
+        @Test
+        void conflictWithAnotherReservationIsRejectedAndTimesStayTheSame() {
+            Reservation r = existingReservation(ReservationStatus.PENDING, student);
+            LocalDateTime newStart = start.plusHours(4);
+            LocalDateTime newEnd = newStart.plusHours(1);
+            when(reservationRepository.existsByLabAndStatusInAndStartTimeBeforeAndEndTimeAfterAndIdNot(
+                    lab, ReservationStatus.ACTIVE, newEnd, newStart, 50L)).thenReturn(true);
+
+            assertThatThrownBy(() -> service.reschedule(50L, student, newStart, newEnd))
+                    .isInstanceOf(ReservationException.class)
+                    .hasMessage("Robotics Lab is already booked during that time");
+            assertThat(r.getStartTime()).isEqualTo(start);
+            assertThat(r.getEndTime()).isEqualTo(end);
+        }
+
+        @Test
+        void equipmentReservationChecksEquipmentAvailability() {
+            Reservation r = existingReservation(ReservationStatus.PENDING, student);
+            r.setLab(null);
+            r.setEquipment(printer);
+            LocalDateTime newStart = start.plusDays(2);
+
+            service.reschedule(50L, student, newStart, newStart.plusHours(1));
+
+            verify(reservationRepository).existsByEquipmentAndStatusInAndStartTimeBeforeAndEndTimeAfterAndIdNot(
+                    printer, ReservationStatus.ACTIVE, newStart.plusHours(1), newStart, 50L);
+            assertThat(r.getStartTime()).isEqualTo(newStart);
+        }
+
+        @Test
+        void onlyTheOwnerCanReschedule() {
+            existingReservation(ReservationStatus.PENDING, student);
+
+            assertThatThrownBy(() -> service.reschedule(50L, faculty, start.plusDays(1), end.plusDays(1)))
+                    .isInstanceOf(ReservationException.class)
+                    .hasMessage("You can only reschedule your own reservations");
+        }
+
+        @Test
+        void approvedReservationCannotBeRescheduled() {
+            existingReservation(ReservationStatus.APPROVED, student);
+
+            assertThatThrownBy(() -> service.reschedule(50L, student, start.plusDays(1), end.plusDays(1)))
+                    .isInstanceOf(ReservationException.class)
+                    .hasMessage("Only pending reservations can be rescheduled");
+        }
+
+        @Test
+        void newTimesFollowTheSameRulesAsANewRequest() {
+            Reservation r = existingReservation(ReservationStatus.PENDING, student);
+
+            assertThatThrownBy(() -> service.reschedule(50L, student, end, start)) // backwards
+                    .isInstanceOf(ReservationException.class)
+                    .hasMessageContaining("End time must be after start time");
+            assertThat(r.getStartTime()).isEqualTo(start);
+        }
+
+        @Test
+        void missingReservationIsReported() {
+            when(reservationRepository.findById(50L)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> service.reschedule(50L, student, start, end))
+                    .isInstanceOf(ReservationException.class)
+                    .hasMessage("Reservation not found");
+        }
+    }
+
     // ------------------------------------------------------------------ queries
 
     @Test
@@ -373,6 +470,7 @@ class ReservationServiceTest {
 
     private Reservation existingReservation(ReservationStatus status, User owner) {
         Reservation r = new Reservation();
+        ReflectionTestUtils.setField(r, "id", 50L);
         r.setUser(owner);
         r.setLab(lab);
         r.setStartTime(start);

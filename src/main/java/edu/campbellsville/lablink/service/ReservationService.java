@@ -94,6 +94,15 @@ public class ReservationService {
         reservation.setStatus(ReservationStatus.CANCELLED);
     }
 
+    /**
+     * Moves a PENDING reservation to a new time window (backlog item 3.3).
+     * TDD: written test-first; this stub exists only so the tests compile.
+     */
+    @Transactional
+    public Reservation reschedule(Long reservationId, User requester, LocalDateTime newStart, LocalDateTime newEnd) {
+        throw new UnsupportedOperationException("reschedule is not implemented yet");
+    }
+
     public List<Reservation> forUser(User user) {
         return reservationRepository.findByUserOrderByStartTimeDesc(user);
     }

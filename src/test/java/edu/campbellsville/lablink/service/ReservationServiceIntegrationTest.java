@@ -6,6 +6,7 @@ import edu.campbellsville.lablink.model.ReservationStatus;
 import edu.campbellsville.lablink.model.Role;
 import edu.campbellsville.lablink.model.User;
 import edu.campbellsville.lablink.repository.LabRepository;
+import edu.campbellsville.lablink.repository.ReservationRepository;
 import edu.campbellsville.lablink.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -31,6 +32,7 @@ class ReservationServiceIntegrationTest {
     @Autowired ReservationService reservationService;
     @Autowired UserRepository userRepository;
     @Autowired LabRepository labRepository;
+    @Autowired ReservationRepository reservationRepository;
 
     User student;
     User faculty;
@@ -113,6 +115,29 @@ class ReservationServiceIntegrationTest {
         Reservation r = reservationService.requestLab(student, lab.getId(), tomorrow9am, tomorrow9am.plusHours(1), "Study");
         assertThatThrownBy(() -> reservationService.approve(r.getId(), student))
                 .isInstanceOf(ReservationException.class);
+    }
+
+    @Test
+    void rescheduleIntoOverlapWithOwnOldSlotIsSaved() {
+        Reservation r = reservationService.requestLab(student, lab.getId(), tomorrow9am, tomorrow9am.plusHours(2), "Study");
+
+        // 9-11 -> 10-12 overlaps only itself
+        reservationService.reschedule(r.getId(), student, tomorrow9am.plusHours(1), tomorrow9am.plusHours(3));
+
+        Reservation reloaded = reservationRepository.findById(r.getId()).orElseThrow();
+        assertThat(reloaded.getStartTime()).isEqualTo(tomorrow9am.plusHours(1));
+        assertThat(reloaded.getEndTime()).isEqualTo(tomorrow9am.plusHours(3));
+    }
+
+    @Test
+    void rescheduleOntoSomeoneElsesBookingIsRejected() {
+        reservationService.requestLab(faculty, lab.getId(), tomorrow9am.plusHours(4), tomorrow9am.plusHours(5), "Lecture");
+        Reservation mine = reservationService.requestLab(student, lab.getId(), tomorrow9am, tomorrow9am.plusHours(1), "Study");
+
+        assertThatThrownBy(() -> reservationService.reschedule(
+                mine.getId(), student, tomorrow9am.plusHours(4), tomorrow9am.plusHours(5)))
+                .isInstanceOf(ReservationException.class)
+                .hasMessageContaining("already booked");
     }
 
     @Test
