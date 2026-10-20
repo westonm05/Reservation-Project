@@ -94,13 +94,31 @@ public class ReservationService {
         reservation.setStatus(ReservationStatus.CANCELLED);
     }
 
-    /**
-     * Moves a PENDING reservation to a new time window (backlog item 3.3).
-     * TDD: written test-first; this stub exists only so the tests compile.
-     */
+    /** Moves a PENDING reservation to a new time window (backlog item 3.3). */
     @Transactional
     public Reservation reschedule(Long reservationId, User requester, LocalDateTime newStart, LocalDateTime newEnd) {
-        throw new UnsupportedOperationException("reschedule is not implemented yet");
+        Reservation reservation = get(reservationId);
+        if (!reservation.getUser().getId().equals(requester.getId())) {
+            throw new ReservationException("You can only reschedule your own reservations");
+        }
+        if (reservation.getStatus() != ReservationStatus.PENDING) {
+            throw new ReservationException("Only pending reservations can be rescheduled");
+        }
+        validateTimes(newStart, newEnd);
+        boolean conflict;
+        if (reservation.getLab() != null) {
+            conflict = reservationRepository.existsByLabAndStatusInAndStartTimeBeforeAndEndTimeAfterAndIdNot(
+                    reservation.getLab(), ReservationStatus.ACTIVE, newEnd, newStart, reservation.getId());
+        } else {
+            conflict = reservationRepository.existsByEquipmentAndStatusInAndStartTimeBeforeAndEndTimeAfterAndIdNot(
+                    reservation.getEquipment(), ReservationStatus.ACTIVE, newEnd, newStart, reservation.getId());
+        }
+        if (conflict) {
+            throw new ReservationException(reservation.getResourceName() + " is already booked during that time");
+        }
+        reservation.setStartTime(newStart);
+        reservation.setEndTime(newEnd);
+        return reservation;
     }
 
     public List<Reservation> forUser(User user) {
