@@ -86,6 +86,55 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
+            <!-- Code coverage: records which lines the tests run, then writes an HTML report to
+                 target/site/jacoco/index.html during "mvn verify". -->
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.8.13</version>
+                <configuration>
+                    <excludes>
+                        <!-- Startup class and demo-data loader contain no business logic -->
+                        <exclude>edu/campbellsville/lablink/LabLinkApplication.class</exclude>
+                        <exclude>edu/campbellsville/lablink/config/DevDataSeeder.class</exclude>
+                    </excludes>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>prepare-agent</id>
+                        <goals><goal>prepare-agent</goal></goals>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>verify</phase>
+                        <goals><goal>report</goal></goals>
+                    </execution>
+                    <!-- Exit criterion from the test plan: the build fails if the service layer
+                         (the tested module) drops below 70% line coverage. -->
+                    <execution>
+                        <id>check</id>
+                        <phase>verify</phase>
+                        <goals><goal>check</goal></goals>
+                        <configuration>
+                            <rules>
+                                <rule>
+                                    <element>PACKAGE</element>
+                                    <includes>
+                                        <include>edu.campbellsville.lablink.service</include>
+                                    </includes>
+                                    <limits>
+                                        <limit>
+                                            <counter>LINE</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>0.70</minimum>
+                                        </limit>
+                                    </limits>
+                                </rule>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 </project>

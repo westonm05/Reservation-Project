@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('Reschedule reservation')}"></head>
+<body>
+<header th:replace="~{fragments :: nav}"></header>
+<main class="narrow">
+    <h1>Reschedule reservation</h1>
+    <p>For: <strong th:text="${reservation.resourceName}"></strong>
+        (currently <span th:text="${#temporals.format(reservation.startTime, 'MMM d, yyyy h:mm a')}"></span>
+        to <span th:text="${#temporals.format(reservation.endTime, 'h:mm a')}"></span>)</p>
+    <p class="flash err" th:if="${error}" th:text="${error}"></p>
+
+    <form th:action="@{/reservations/{id}/reschedule(id=${reservation.id})}" th:object="${form}" method="post" class="card">
+        <label>New start <input type="datetime-local" th:field="*{startTime}"><span class="field-err" th:errors="*{startTime}"></span></label>
+        <label>New end <input type="datetime-local" th:field="*{endTime}"><span class="field-err" th:errors="*{endTime}"></span></label>
+        <button type="submit">Save new time</button>
+        <a th:href="@{/reservations}">Back</a>
+    </form>
+</main>
+</body>
+</html>

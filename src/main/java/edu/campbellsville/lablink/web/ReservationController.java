@@ -1,11 +1,14 @@
 package edu.campbellsville.lablink.web;
 
+import edu.campbellsville.lablink.model.Reservation;
+import edu.campbellsville.lablink.model.ReservationStatus;
 import edu.campbellsville.lablink.model.User;
 import edu.campbellsville.lablink.service.InventoryService;
 import edu.campbellsville.lablink.service.ReservationException;
 import edu.campbellsville.lablink.service.ReservationService;
 import edu.campbellsville.lablink.service.UserService;
 import edu.campbellsville.lablink.web.form.ReservationForm;
+import edu.campbellsville.lablink.web.form.RescheduleForm;
 import jakarta.validation.Valid;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -81,6 +84,44 @@ public class ReservationController {
                 () -> reservations.cancel(id, currentUser(principal)));
     }
 
+    // ---- reschedule (owner, pending reservations only) ----
+
+    @GetMapping("/{id}/reschedule")
+    public String rescheduleForm(@PathVariable Long id, Principal principal, Model model, RedirectAttributes redirect) {
+        Reservation reservation = ownPending(id, principal);
+        if (reservation == null) {
+            redirect.addFlashAttribute("error", "Only your own pending reservations can be rescheduled");
+            return "redirect:/reservations";
+        }
+        RescheduleForm form = new RescheduleForm();
+        form.setStartTime(reservation.getStartTime());
+        form.setEndTime(reservation.getEndTime());
+        model.addAttribute("form", form);
+        model.addAttribute("reservation", reservation);
+        return "reservations/reschedule";
+    }
+
+    @PostMapping("/{id}/reschedule")
+    public String reschedule(@PathVariable Long id, @Valid @ModelAttribute("form") RescheduleForm form, BindingResult errors,
+                             Principal principal, Model model, RedirectAttributes redirect) {
+        Reservation reservation = ownPending(id, principal);
+        if (reservation == null) {
+            redirect.addFlashAttribute("error", "Only your own pending reservations can be rescheduled");
+            return "redirect:/reservations";
+        }
+        if (!errors.hasErrors()) {
+            try {
+                reservations.reschedule(id, currentUser(principal), form.getStartTime(), form.getEndTime());
+                redirect.addFlashAttribute("message", "Reservation rescheduled.");
+                return "redirect:/reservations";
+            } catch (ReservationException e) {
+                model.addAttribute("error", e.getMessage());
+            }
+        }
+        model.addAttribute("reservation", reservation);
+        return "reservations/reschedule";
+    }
+
     // ---- lab manager pages ----
 
     @GetMapping("/manage")
@@ -121,6 +162,14 @@ public class ReservationController {
         model.addAttribute("form", form);
         model.addAttribute("resourceName", resourceName);
         return "reservations/form";
+    }
+
+    /** The current user's reservation with this id if it is still PENDING, otherwise null. */
+    private Reservation ownPending(Long id, Principal principal) {
+        return reservations.forUser(currentUser(principal)).stream()
+                .filter(r -> r.getId().equals(id) && r.getStatus() == ReservationStatus.PENDING)
+                .findFirst()
+                .orElse(null);
     }
 
     private User currentUser(Principal principal) {
