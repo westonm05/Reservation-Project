@@ -5,22 +5,29 @@ import glob
 import xml.etree.ElementTree as ET
 from collections import defaultdict
 
-total = failures = errors = skipped = 0
-failed = []
+# Count <testcase> elements directly (deduplicated): the suite-level totals Surefire writes
+# don't include tests inside @Nested classes.
+cases = {}
 for path in glob.glob("target/surefire-reports/TEST-*.xml"):
-    suite = ET.parse(path).getroot()
-    total += int(suite.get("tests", 0))
-    failures += int(suite.get("failures", 0))
-    errors += int(suite.get("errors", 0))
-    skipped += int(suite.get("skipped", 0))
-    for case in suite.iter("testcase"):
-        problem = case.find("failure")
-        if problem is None:
-            problem = case.find("error")
+    for case in ET.parse(path).getroot().iter("testcase"):
+        cases[(case.get("classname", ""), case.get("name"))] = case
+
+total = len(cases)
+failures = errors = skipped = 0
+failed = []
+for (classname, name), case in sorted(cases.items()):
+    if case.find("skipped") is not None:
+        skipped += 1
+    problem = case.find("failure")
+    if problem is not None:
+        failures += 1
+    else:
+        problem = case.find("error")
         if problem is not None:
-            cls = case.get("classname", "").split(".")[-1]
-            reason = (problem.get("type") or "").split(".")[-1]
-            failed.append(f"{cls}.{case.get('name')} ({reason})")
+            errors += 1
+    if problem is not None:
+        reason = (problem.get("type") or "").split(".")[-1]
+        failed.append(f"{classname.split('.')[-1]}.{name} ({reason})")
 
 level = "error" if failures or errors else "notice"
 print(f"::{level} title=Tests::Tests run: {total}, Failures: {failures}, Errors: {errors}, Skipped: {skipped}")
