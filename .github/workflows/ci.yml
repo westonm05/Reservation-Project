@@ -19,6 +19,10 @@ jobs:
           cache: maven
       - name: Build and test
         run: mvn -B verify
+      # Posts test counts, any failing tests, and coverage per package as annotations on the run page.
+      - name: Test and coverage summary
+        if: always()
+        run: python3 .github/scripts/test_summary.py
       # Keep the coverage report and test results so they can be downloaded from the run page,
       # even when a test fails (that's when they're most useful).
       - name: Upload coverage report
