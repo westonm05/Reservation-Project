@@ -25,11 +25,13 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.flash;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
 /**
  * INTEGRATION tests for the reservation workflow from the HTTP request all the way to the
@@ -157,5 +159,50 @@ class ReservationWebIntegrationTest {
 
         assertThat(reservationRepository.findById(studentsBooking.getId()).orElseThrow().getStatus())
                 .isEqualTo(ReservationStatus.PENDING);
+    }
+
+    // ---- reschedule (feature built test-first) ----
+
+    @Test
+    @WithMockUser(username = "student@lablink.edu", roles = "STUDENT")
+    void reschedulePageShowsCurrentTimes() throws Exception {
+        Reservation mine = reservationService.requestLab(student, lab.getId(), start, start.plusHours(1), "Study");
+
+        mvc.perform(get("/reservations/{id}/reschedule", mine.getId()))
+                .andExpect(status().isOk())
+                .andExpect(view().name("reservations/reschedule"))
+                .andExpect(model().attributeExists("form", "reservation"));
+    }
+
+    @Test
+    @WithMockUser(username = "student@lablink.edu", roles = "STUDENT")
+    void ownerReschedulesThroughTheWeb() throws Exception {
+        Reservation mine = reservationService.requestLab(student, lab.getId(), start, start.plusHours(1), "Study");
+        LocalDateTime later = start.plusDays(1);
+
+        mvc.perform(post("/reservations/{id}/reschedule", mine.getId()).with(csrf())
+                        .param("startTime", later.format(HTML_DATETIME))
+                        .param("endTime", later.plusHours(2).format(HTML_DATETIME)))
+                .andExpect(redirectedUrl("/reservations"))
+                .andExpect(flash().attribute("message", "Reservation rescheduled."));
+
+        Reservation reloaded = reservationRepository.findById(mine.getId()).orElseThrow();
+        assertThat(reloaded.getStartTime()).isEqualTo(later);
+        assertThat(reloaded.getEndTime()).isEqualTo(later.plusHours(2));
+    }
+
+    @Test
+    @WithMockUser(username = "student@lablink.edu", roles = "STUDENT")
+    void rescheduleOntoABookedSlotShowsTheError() throws Exception {
+        reservationService.requestLab(faculty, lab.getId(), start.plusHours(4), start.plusHours(5), "Lecture");
+        Reservation mine = reservationService.requestLab(student, lab.getId(), start, start.plusHours(1), "Study");
+
+        mvc.perform(post("/reservations/{id}/reschedule", mine.getId()).with(csrf())
+                        .param("startTime", start.plusHours(4).format(HTML_DATETIME))
+                        .param("endTime", start.plusHours(5).format(HTML_DATETIME)))
+                .andExpect(status().isOk())
+                .andExpect(model().attribute("error", containsString("already booked")));
+
+        assertThat(reservationRepository.findById(mine.getId()).orElseThrow().getStartTime()).isEqualTo(start);
     }
 }

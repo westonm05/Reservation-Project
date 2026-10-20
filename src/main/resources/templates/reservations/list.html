@@ -19,6 +19,7 @@
             <td th:text="${r.purpose}"></td>
             <td><span th:class="'badge ' + ${r.status}" th:text="${r.status}"></span></td>
             <td>
+                <a th:if="${r.status.name() == 'PENDING'}" th:href="@{/reservations/{id}/reschedule(id=${r.id})}">Reschedule</a>
                 <form th:if="${r.status.name() == 'PENDING' or r.status.name() == 'APPROVED'}"
                       th:action="@{/reservations/{id}/cancel(id=${r.id})}" method="post" class="inline">
                     <button type="submit" class="link danger">Cancel</button>
