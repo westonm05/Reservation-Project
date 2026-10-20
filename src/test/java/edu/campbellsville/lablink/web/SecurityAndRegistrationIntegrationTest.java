@@ -1,6 +1,7 @@
 package edu.campbellsville.lablink.web;
 
 import edu.campbellsville.lablink.repository.UserRepository;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -18,10 +19,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /** Sends fake HTTP requests through the whole app (security, controllers, templates, database). */
+@Tag("integration")
 @SpringBootTest
 @AutoConfigureMockMvc
 @Transactional
-class SecurityAndRegistrationTest {
+class SecurityAndRegistrationIntegrationTest {
 
     @Autowired MockMvc mvc;
     @Autowired UserRepository userRepository;

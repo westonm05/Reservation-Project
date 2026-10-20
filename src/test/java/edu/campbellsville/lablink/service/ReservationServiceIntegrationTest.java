@@ -8,6 +8,7 @@ import edu.campbellsville.lablink.model.User;
 import edu.campbellsville.lablink.repository.LabRepository;
 import edu.campbellsville.lablink.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -22,9 +23,10 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * Tests the reservation business rules against the real H2 database.
  * @Transactional rolls back after each test, so tests don't affect each other.
  */
+@Tag("integration")
 @SpringBootTest
 @Transactional
-class ReservationServiceTest {
+class ReservationServiceIntegrationTest {
 
     @Autowired ReservationService reservationService;
     @Autowired UserRepository userRepository;
