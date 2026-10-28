@@ -1,0 +1,45 @@
+// LabLink Git workflow: feature branch -> pull request -> main -> production. Regenerate with:
+//   dot -Tsvg git-workflow.dot -o git-workflow.svg && dot -Tpng -Gdpi=150 git-workflow.dot -o git-workflow.png
+digraph GitWorkflow {
+  graph [rankdir=TB, fontname="Helvetica", fontsize=13, nodesep=0.5, ranksep=0.4, bgcolor="white", pad=0.3, newrank=true];
+  node  [shape=box, style="rounded,filled", fillcolor="#eef2fb", color="#3b5ba5", fontname="Helvetica", fontsize=11, margin="0.15,0.08"];
+  edge  [color="#444444", fontname="Helvetica", fontsize=10, arrowsize=0.8];
+
+  subgraph cluster_local {
+    label="1. Developer's machine"; style="rounded,filled"; fillcolor="#f7f9fd"; color="#3b5ba5";
+    branch [label="Create branch from main\nfeature/<name>"];
+    commit [label="Write code + tests\ncommit: feat: / fix: / test: ..."];
+    push   [label="git push\norigin feature/<name>"];
+    {rank=same; branch; commit; push;}
+  }
+
+  subgraph cluster_pr {
+    label="2. Pull request into main (GitHub)"; style="rounded,filled"; fillcolor="#f3faf5"; color="#1d7a46";
+    node [fillcolor="#e7f5ec", color="#1d7a46"];
+    pr     [label="Open pull request\ndescription · test plan · screenshots"];
+    ci     [shape=diamond, style="filled", label="CI checks\nLint\nBuild & Test"];
+    review [shape=diamond, style="filled", label="Teammate\nreview\n(1 approval)"];
+    merge  [label="Squash and merge\nbranch deleted"];
+    {rank=same; pr; ci; review; merge;}
+  }
+
+  subgraph cluster_main {
+    label="3. main → production"; style="rounded,filled"; fillcolor="#fbf8f2"; color="#a15c07";
+    node [fillcolor="#fff4e0", color="#a15c07"];
+    main   [label="main (protected)\nCI re-runs · builds .jar"];
+    tag    [label="Tag release\nv0.x.0 at milestone"];
+    deploy [shape=box3d, label="Deploy .jar to cloud host\nMySQL profile"];
+    {rank=same; main; tag; deploy; blocked;}
+  }
+
+  branch -> commit -> push -> pr -> ci;
+  ci -> review [label="  green ✓", color="#1d7a46", fontcolor="#1d7a46"];
+  review -> merge [label="  approved", color="#1d7a46", fontcolor="#1d7a46"];
+  merge -> main -> tag -> deploy;
+
+  ci -> commit     [label="red ✗: fix and push again", color="#b42318", fontcolor="#b42318", style=dashed, constraint=false, tailport=n, headport=s];
+  review -> commit [label="changes requested", color="#b42318", fontcolor="#b42318", style=dashed, constraint=false, tailport=n, headport=s];
+
+  blocked [shape=note, fillcolor="#fdecea", color="#b42318", fontsize=10, label="Direct pushes to main\nare blocked by\nbranch protection"];
+  blocked -> main [style=dotted, color="#b42318", arrowhead=tee];
+}
