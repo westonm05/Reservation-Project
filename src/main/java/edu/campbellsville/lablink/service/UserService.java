@@ -35,6 +35,23 @@ public class UserService {
         return userRepository.existsByEmail(email.trim().toLowerCase());
     }
 
+    /**
+     * Changes a user's password after checking they know the current one.
+     * Throws IllegalArgumentException with a message the page can show if the check fails.
+     */
+    @Transactional
+    public void changePassword(String email, String currentPassword, String newPassword) {
+        User user = getByEmail(email);
+        if (!passwordEncoder.matches(currentPassword, user.getPasswordHash())) {
+            throw new IllegalArgumentException("Current password is incorrect");
+        }
+        if (passwordEncoder.matches(newPassword, user.getPasswordHash())) {
+            throw new IllegalArgumentException("New password must be different from the current one");
+        }
+        user.setPasswordHash(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+    }
+
     public User getByEmail(String email) {
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("No user with email " + email));
