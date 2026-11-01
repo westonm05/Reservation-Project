@@ -88,18 +88,21 @@ How we merge:
 
 ## 5. Branch protection rules on `main`
 
-Configured in **Settings → Branches → Branch protection rule** for `main`:
+Enforced by the repository ruleset **`protect-main`** (**Settings → Rules → Rulesets**), status **Active**, targeting the default branch (`main`):
 
-| Setting | Value | Why |
+| Rule | Value | Why |
 |---|---|---|
 | Require a pull request before merging | On | No direct pushes; every change is reviewed |
-| Required approvals | 1 | A second set of eyes on every change |
+| Required approvals | 1 | A second set of eyes on every change; authors cannot approve their own PRs |
 | Dismiss stale approvals when new commits are pushed | On | An approval covers the code actually being merged |
 | Require conversation resolution before merging | On | Review comments can't be ignored |
-| Require status checks to pass | On: `Lint`, `Build & Test` | Broken or unlinted code can't reach `main` |
+| Allowed merge methods | Squash only | Enforces the merge policy above |
+| Require status checks to pass | On: `Lint`, `Build & Test` (GitHub Actions) | Broken or unlinted code can't reach `main` |
 | Require branches to be up to date before merging | On | CI ran against the latest `main` |
-| Do not allow bypassing the above settings | On | Rules apply to the repository owner too |
-| Allow force pushes / deletions | Off | `main`'s history can't be rewritten or lost |
+| Require linear history | On | No merge commits on `main` |
+| Restrict deletions | On | `main` can't be deleted |
+| Block force pushes | On | `main`'s history can't be rewritten |
+| Bypass list | Empty | Rules apply to everyone, including the repository owner |
 
 ## 6. CI/CD pipeline
 
