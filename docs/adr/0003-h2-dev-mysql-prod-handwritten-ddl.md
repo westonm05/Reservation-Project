@@ -1,6 +1,6 @@
 # ADR-0003: H2 for development, MySQL for production, schema from hand-written DDL
 
-- **Status:** Accepted
+- **Status:** Accepted; schema management superseded by [ADR-0005](0005-flyway-migrations-and-sql-seed-data.md)
 - **Date:** 2026-10-18
 - **Deciders:** LabLink team
 
