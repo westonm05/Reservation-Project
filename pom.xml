@@ -55,6 +55,17 @@
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
 
+        <!-- Flyway runs the numbered migration scripts in src/main/resources/db/migration at
+             startup, so any empty database (H2 or MySQL) is built to the current schema. -->
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-mysql</artifactId>
+        </dependency>
+
         <!-- Databases: H2 runs in memory for development, MySQL for production -->
         <dependency>
             <groupId>com.h2database</groupId>
@@ -94,9 +105,8 @@
                 <version>0.8.13</version>
                 <configuration>
                     <excludes>
-                        <!-- Startup class and demo-data loader contain no business logic -->
+                        <!-- Startup class contains no business logic -->
                         <exclude>edu/campbellsville/lablink/LabLinkApplication.class</exclude>
-                        <exclude>edu/campbellsville/lablink/config/DevDataSeeder.class</exclude>
                     </excludes>
                 </configuration>
                 <executions>

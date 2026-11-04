@@ -7,7 +7,11 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
 
@@ -34,11 +38,17 @@ public class User {
     private String passwordHash;
 
     @Enumerated(EnumType.STRING) // store "STUDENT" rather than 0, so the data stays readable
+    @JdbcTypeCode(SqlTypes.VARCHAR) // a VARCHAR column (with a CHECK), not a MySQL ENUM column
     @Column(nullable = false)
     private Role role;
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
+
+    // Many users belong to one department. Optional: self-registered students may not have one.
+    @ManyToOne
+    @JoinColumn(name = "department_id")
+    private Department department;
 
     protected User() {
         // JPA needs a no-argument constructor
@@ -61,4 +71,6 @@ public class User {
     public Role getRole() { return role; }
     public void setRole(Role role) { this.role = role; }
     public LocalDateTime getCreatedAt() { return createdAt; }
+    public Department getDepartment() { return department; }
+    public void setDepartment(Department department) { this.department = department; }
 }

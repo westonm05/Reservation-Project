@@ -2,6 +2,8 @@ package edu.campbellsville.lablink.service;
 
 import edu.campbellsville.lablink.model.Equipment;
 import edu.campbellsville.lablink.model.Lab;
+import edu.campbellsville.lablink.repository.DepartmentRepository;
+import edu.campbellsville.lablink.repository.EquipmentCategoryRepository;
 import edu.campbellsville.lablink.repository.EquipmentRepository;
 import edu.campbellsville.lablink.repository.LabRepository;
 import org.junit.jupiter.api.Tag;
@@ -29,6 +31,8 @@ class InventoryServiceTest {
 
     @Mock LabRepository labRepository;
     @Mock EquipmentRepository equipmentRepository;
+    @Mock DepartmentRepository departmentRepository;
+    @Mock EquipmentCategoryRepository categoryRepository;
 
     @InjectMocks InventoryService service;
 

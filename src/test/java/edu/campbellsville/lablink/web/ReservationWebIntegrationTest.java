@@ -37,7 +37,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * INTEGRATION tests for the reservation workflow from the HTTP request all the way to the
  * database: Spring Security -> ReservationController -> ReservationService -> repositories -> H2.
  *
- * The users come from DevDataSeeder (student@, faculty@, manager@lablink.edu). @WithMockUser
+ * The users come from the seed script db/seed/R__seed_test_data.sql (student@, faculty@, manager@lablink.edu). @WithMockUser
  * logs a request in as one of them without going through the login page. @Transactional undoes
  * every database change after each test.
  */

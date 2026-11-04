@@ -27,6 +27,8 @@ public class EquipmentForm {
 
     private Long labId; // optional
 
+    private Long categoryId; // optional
+
     public static EquipmentForm from(Equipment e) {
         EquipmentForm form = new EquipmentForm();
         form.id = e.getId();
@@ -35,6 +37,7 @@ public class EquipmentForm {
         form.description = e.getDescription();
         form.status = e.getStatus();
         form.labId = e.getLab() != null ? e.getLab().getId() : null;
+        form.categoryId = e.getCategory() != null ? e.getCategory().getId() : null;
         return form;
     }
 
@@ -50,4 +53,6 @@ public class EquipmentForm {
     public void setStatus(EquipmentStatus status) { this.status = status; }
     public Long getLabId() { return labId; }
     public void setLabId(Long labId) { this.labId = labId; }
+    public Long getCategoryId() { return categoryId; }
+    public void setCategoryId(Long categoryId) { this.categoryId = categoryId; }
 }

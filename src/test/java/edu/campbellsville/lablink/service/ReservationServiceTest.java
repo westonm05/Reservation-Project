@@ -1,20 +1,24 @@
 package edu.campbellsville.lablink.service;
 
 import edu.campbellsville.lablink.model.Equipment;
+import edu.campbellsville.lablink.model.EquipmentCategory;
 import edu.campbellsville.lablink.model.EquipmentStatus;
 import edu.campbellsville.lablink.model.Lab;
 import edu.campbellsville.lablink.model.Reservation;
 import edu.campbellsville.lablink.model.ReservationStatus;
+import edu.campbellsville.lablink.model.ReservationStatusChange;
 import edu.campbellsville.lablink.model.Role;
 import edu.campbellsville.lablink.model.User;
 import edu.campbellsville.lablink.repository.EquipmentRepository;
 import edu.campbellsville.lablink.repository.LabRepository;
 import edu.campbellsville.lablink.repository.ReservationRepository;
+import edu.campbellsville.lablink.repository.ReservationStatusChangeRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -46,8 +50,9 @@ class ReservationServiceTest {
     @Mock ReservationRepository reservationRepository;
     @Mock LabRepository labRepository;
     @Mock EquipmentRepository equipmentRepository;
+    @Mock ReservationStatusChangeRepository historyRepository;
 
-    @InjectMocks ReservationService service; // built with the three mocks above
+    @InjectMocks ReservationService service; // built with the four mocks above
 
     User student;
     User faculty;
@@ -450,6 +455,94 @@ class ReservationServiceTest {
         when(reservationRepository.countByStatus(ReservationStatus.PENDING)).thenReturn(4L);
 
         assertThat(service.pendingCount()).isEqualTo(4L);
+    }
+
+    // ------------------------------------------------------------------ status history (Week 11)
+
+    @Nested
+    class StatusHistory {
+
+        @Test
+        void newStudentRequestWritesASubmittedHistoryRow() {
+            labExists();
+            saveReturnsArgument();
+
+            Reservation r = service.requestLab(student, 10L, start, end, "Study");
+
+            ReservationStatusChange row = capturedHistoryRow();
+            assertThat(row.getReservation()).isSameAs(r);
+            assertThat(row.getOldStatus()).isNull(); // first row has no previous status
+            assertThat(row.getNewStatus()).isEqualTo(ReservationStatus.PENDING);
+            assertThat(row.getChangedBy()).isEqualTo(student);
+        }
+
+        @Test
+        void approvalWritesPendingToApprovedRowByTheManager() {
+            existingReservation(ReservationStatus.PENDING, student);
+
+            service.approve(50L, manager);
+
+            ReservationStatusChange row = capturedHistoryRow();
+            assertThat(row.getOldStatus()).isEqualTo(ReservationStatus.PENDING);
+            assertThat(row.getNewStatus()).isEqualTo(ReservationStatus.APPROVED);
+            assertThat(row.getChangedBy()).isEqualTo(manager);
+        }
+
+        @Test
+        void cancellationWritesARowByTheOwner() {
+            existingReservation(ReservationStatus.APPROVED, student);
+
+            service.cancel(50L, student);
+
+            ReservationStatusChange row = capturedHistoryRow();
+            assertThat(row.getOldStatus()).isEqualTo(ReservationStatus.APPROVED);
+            assertThat(row.getNewStatus()).isEqualTo(ReservationStatus.CANCELLED);
+            assertThat(row.getChangedBy()).isEqualTo(student);
+        }
+
+        @Test
+        void failedRequestWritesNoHistory() {
+            when(labRepository.findById(99L)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> service.requestLab(student, 99L, start, end, "Study"))
+                    .isInstanceOf(ReservationException.class);
+            verify(historyRepository, never()).save(any());
+        }
+
+        private ReservationStatusChange capturedHistoryRow() {
+            ArgumentCaptor<ReservationStatusChange> captor = ArgumentCaptor.forClass(ReservationStatusChange.class);
+            verify(historyRepository).save(captor.capture());
+            return captor.getValue();
+        }
+    }
+
+    // ------------------------------------------------------------------ category loan limit (Week 11)
+
+    @Nested
+    class LoanLimit {
+
+        @BeforeEach
+        void printerHasFourHourLimit() {
+            printer.setCategory(new EquipmentCategory("3D Printer", "FDM printers", 4));
+            when(equipmentRepository.findById(20L)).thenReturn(Optional.of(printer));
+        }
+
+        @Test
+        void reservationWithinTheLimitIsAllowed() {
+            saveReturnsArgument();
+
+            Reservation r = service.requestEquipment(student, 20L, start, start.plusHours(4), "Print parts");
+
+            assertThat(r.getEquipment()).isEqualTo(printer);
+        }
+
+        @Test
+        void reservationLongerThanTheLimitIsRejected() {
+            assertThatThrownBy(() -> service.requestEquipment(student, 20L, start, start.plusHours(5), "Long print"))
+                    .isInstanceOf(ReservationException.class)
+                    .hasMessage("3D Printer items can be reserved for at most 4 hours at a time");
+            verify(reservationRepository, never()).save(any());
+        }
     }
 
     // ------------------------------------------------------------------ helpers

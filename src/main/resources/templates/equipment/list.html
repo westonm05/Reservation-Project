@@ -9,10 +9,11 @@
     <p sec:authorize="hasRole('LAB_MANAGER')"><a class="button" th:href="@{/equipment/new}">Add equipment</a></p>
 
     <table>
-        <thead><tr><th>Name</th><th>Serial</th><th>Location</th><th>Status</th><th></th></tr></thead>
+        <thead><tr><th>Name</th><th>Category</th><th>Serial</th><th>Location</th><th>Status</th><th></th></tr></thead>
         <tbody>
         <tr th:each="e : ${equipmentList}">
             <td th:text="${e.name}"></td>
+            <td th:text="${e.category != null} ? ${e.category.name} : '-'"></td>
             <td th:text="${e.serialNumber}"></td>
             <td th:text="${e.lab != null} ? ${e.lab.name} : 'Portable'"></td>
             <td><span th:class="'badge ' + ${e.status}" th:text="${e.status}"></span></td>

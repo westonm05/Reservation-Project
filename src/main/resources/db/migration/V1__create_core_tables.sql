@@ -1,8 +1,12 @@
--- LabLink database schema (DDL)
--- Runs on MySQL 8 and on H2 (MODE=MySQL) for development.
--- Normalized to Third Normal Form: see docs/database-design.md.
+-- V1: the four core tables from Milestone 2 (users, labs, equipment, reservations).
+--
+-- Flyway runs every file in db/migration in version order (V1, V2, ...) exactly once and
+-- records it in the flyway_schema_history table. Never edit a migration after it has been
+-- run on a shared database: add a new V<n> file instead.
+--
+-- Written in SQL that both MySQL 8 (production) and H2 in MySQL mode (development/tests) accept.
 
-CREATE TABLE IF NOT EXISTS users (
+CREATE TABLE users (
     id            BIGINT       NOT NULL AUTO_INCREMENT,
     email         VARCHAR(255) NOT NULL,
     full_name     VARCHAR(100) NOT NULL,
@@ -14,7 +18,7 @@ CREATE TABLE IF NOT EXISTS users (
     CONSTRAINT chk_users_role CHECK (role IN ('STUDENT', 'FACULTY', 'LAB_MANAGER'))
 );
 
-CREATE TABLE IF NOT EXISTS labs (
+CREATE TABLE labs (
     id          BIGINT       NOT NULL AUTO_INCREMENT,
     name        VARCHAR(100) NOT NULL,
     building    VARCHAR(100) NOT NULL,
@@ -28,7 +32,7 @@ CREATE TABLE IF NOT EXISTS labs (
     CONSTRAINT chk_labs_capacity CHECK (capacity > 0)
 );
 
-CREATE TABLE IF NOT EXISTS equipment (
+CREATE TABLE equipment (
     id            BIGINT       NOT NULL AUTO_INCREMENT,
     name          VARCHAR(100) NOT NULL,
     serial_number VARCHAR(50)  NOT NULL,
@@ -41,7 +45,7 @@ CREATE TABLE IF NOT EXISTS equipment (
     CONSTRAINT chk_equipment_status CHECK (status IN ('AVAILABLE', 'MAINTENANCE', 'RETIRED'))
 );
 
-CREATE TABLE IF NOT EXISTS reservations (
+CREATE TABLE reservations (
     id             BIGINT       NOT NULL AUTO_INCREMENT,
     user_id        BIGINT       NOT NULL,
     lab_id         BIGINT,
@@ -65,6 +69,3 @@ CREATE TABLE IF NOT EXISTS reservations (
         (lab_id IS NOT NULL AND equipment_id IS NULL) OR
         (lab_id IS NULL AND equipment_id IS NOT NULL))
 );
-
--- Indexes: MySQL (InnoDB) and H2 automatically index every foreign-key column, which covers
--- the double-booking lookup (lab_id / equipment_id) and the "my reservations" page (user_id).

@@ -5,6 +5,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -44,6 +46,11 @@ public class Lab {
     @Column(nullable = false)
     private boolean active = true; // inactive labs can't be reserved
 
+    // The department that owns this lab (optional).
+    @ManyToOne
+    @JoinColumn(name = "department_id")
+    private Department department;
+
     public Lab() {
     }
 
@@ -69,4 +76,6 @@ public class Lab {
     public void setDescription(String description) { this.description = description; }
     public boolean isActive() { return active; }
     public void setActive(boolean active) { this.active = active; }
+    public Department getDepartment() { return department; }
+    public void setDepartment(Department department) { this.department = department; }
 }
