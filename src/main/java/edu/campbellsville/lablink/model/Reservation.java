@@ -62,6 +62,7 @@ public class Reservation {
     private LocalDateTime reviewedAt;
 
     public Reservation() {
+        // Required by JPA, which creates the object first and then fills in its fields from the database row.
     }
 
     /** Name of whatever is being reserved, for display on pages. */
