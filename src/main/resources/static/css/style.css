@@ -37,4 +37,9 @@ td.actions > * { margin-right: 8px; }
 .badge.APPROVED, .badge.AVAILABLE { background: #e7f5ec; color: var(--ok); }
 .badge.PENDING, .badge.MAINTENANCE { background: #fff4e0; color: var(--warn); }
 .badge.REJECTED, .badge.CANCELLED, .badge.RETIRED { background: #fdecea; color: var(--err); }
+/* Search/filter bar above the lab and equipment tables */
+.filters { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; margin-bottom: 16px;
+           background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 12px; }
+.filters label { font-weight: 600; font-size: .9rem; flex: 1 1 180px; }
+.filters label.check { flex: 0 0 auto; font-weight: 400; padding-bottom: 8px; }
 @media (max-width: 640px) { table { display: block; overflow-x: auto; } }

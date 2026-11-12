@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
@@ -26,9 +27,18 @@ public class EquipmentController {
         this.inventory = inventory;
     }
 
+    /** Equipment list with optional search filters (backlog 3.8), e.g. /equipment?q=laptop&status=AVAILABLE */
     @GetMapping
-    public String list(Model model) {
-        model.addAttribute("equipmentList", inventory.allEquipment());
+    public String list(@RequestParam(required = false) String q,
+                       @RequestParam(required = false) Long categoryId,
+                       @RequestParam(required = false) EquipmentStatus status,
+                       Model model) {
+        model.addAttribute("equipmentList", inventory.searchEquipment(q, categoryId, status));
+        model.addAttribute("categories", inventory.allCategories());
+        model.addAttribute("statuses", EquipmentStatus.values());
+        model.addAttribute("q", q);
+        model.addAttribute("categoryId", categoryId);
+        model.addAttribute("status", status);
         return "equipment/list";
     }
 
