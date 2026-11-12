@@ -8,6 +8,23 @@
     <div th:replace="~{fragments :: flash}"></div>
     <p sec:authorize="hasRole('LAB_MANAGER')"><a class="button" th:href="@{/labs/new}">Add lab</a></p>
 
+    <!-- Search and filter (backlog 3.8). A GET form, so the filters show up in the URL and can be bookmarked. -->
+    <form th:action="@{/labs}" method="get" class="filters" role="search">
+        <label>Search
+            <input type="search" name="q" th:value="${q}" placeholder="Name, building, room or description">
+        </label>
+        <label>Department
+            <select name="departmentId">
+                <option value="">All departments</option>
+                <option th:each="d : ${departments}" th:value="${d.id}" th:text="${d.name}"
+                        th:selected="${d.id == departmentId}">Department</option>
+            </select>
+        </label>
+        <label class="check"><input type="checkbox" name="activeOnly" value="true" th:checked="${activeOnly}"> Active labs only</label>
+        <button type="submit">Search</button>
+        <a th:href="@{/labs}">Clear</a>
+    </form>
+
     <table>
         <thead><tr><th>Name</th><th>Location</th><th>Capacity</th><th>Description</th><th></th></tr></thead>
         <tbody>
@@ -29,6 +46,9 @@
                     </form>
                 </th:block>
             </td>
+        </tr>
+        <tr th:if="${#lists.isEmpty(labs)}">
+            <td colspan="5" class="hint">No labs match your search.</td>
         </tr>
         </tbody>
     </table>

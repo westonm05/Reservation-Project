@@ -28,9 +28,17 @@ public class LabController {
         this.inventory = inventory;
     }
 
+    /** Lab list with optional search filters (backlog 3.8), e.g. /labs?q=science&departmentId=1&activeOnly=true */
     @GetMapping
-    public String list(Model model) {
-        model.addAttribute("labs", inventory.allLabs());
+    public String list(@RequestParam(required = false) String q,
+                       @RequestParam(required = false) Long departmentId,
+                       @RequestParam(defaultValue = "false") boolean activeOnly,
+                       Model model) {
+        model.addAttribute("labs", inventory.searchLabs(q, departmentId, activeOnly));
+        model.addAttribute("departments", inventory.allDepartments());
+        model.addAttribute("q", q);
+        model.addAttribute("departmentId", departmentId);
+        model.addAttribute("activeOnly", activeOnly);
         return "labs/list";
     }
 

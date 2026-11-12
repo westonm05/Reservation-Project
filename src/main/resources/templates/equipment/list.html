@@ -8,6 +8,29 @@
     <div th:replace="~{fragments :: flash}"></div>
     <p sec:authorize="hasRole('LAB_MANAGER')"><a class="button" th:href="@{/equipment/new}">Add equipment</a></p>
 
+    <!-- Search and filter (backlog 3.8) -->
+    <form th:action="@{/equipment}" method="get" class="filters" role="search">
+        <label>Search
+            <input type="search" name="q" th:value="${q}" placeholder="Name, serial number or description">
+        </label>
+        <label>Category
+            <select name="categoryId">
+                <option value="">All categories</option>
+                <option th:each="c : ${categories}" th:value="${c.id}" th:text="${c.name}"
+                        th:selected="${c.id == categoryId}">Category</option>
+            </select>
+        </label>
+        <label>Status
+            <select name="status">
+                <option value="">Any status</option>
+                <option th:each="s : ${statuses}" th:value="${s}" th:text="${s}"
+                        th:selected="${s == status}">STATUS</option>
+            </select>
+        </label>
+        <button type="submit">Search</button>
+        <a th:href="@{/equipment}">Clear</a>
+    </form>
+
     <table>
         <thead><tr><th>Name</th><th>Category</th><th>Serial</th><th>Location</th><th>Status</th><th></th></tr></thead>
         <tbody>
@@ -27,6 +50,9 @@
                     </form>
                 </th:block>
             </td>
+        </tr>
+        <tr th:if="${#lists.isEmpty(equipmentList)}">
+            <td colspan="6" class="hint">No equipment matches your search.</td>
         </tr>
         </tbody>
     </table>
