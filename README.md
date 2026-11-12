@@ -39,7 +39,7 @@ Then open http://localhost:8080 and log in with a demo account:
 
 The development database (H2) lives in memory, so it resets every time the app restarts.
 
-**Run the tests:** `mvn verify` (GitHub Actions also runs them on every push).
+**Run the tests:** `mvn verify` runs lint, every test, and the coverage check (GitHub Actions runs the same on every push).
 
 **Use MySQL instead of H2:** create an empty `lablink` database, set `DB_URL`,
 `DB_USERNAME`, `DB_PASSWORD`, and run `mvn spring-boot:run -Dspring-boot.run.profiles=mysql`.
@@ -64,9 +64,13 @@ docs/           Milestone 2 design documents, UML, ADRs, project plan
 See [docs/README.md](docs/README.md) for the architecture document, UML, database
 design, ADRs and project plan.
 
-## Branching
-Work on feature/<name> branches and merge into main through
-reviewed pull requests. Never commit directly to main.
+## Branching & Pull Requests
+Work on `feature/<name>` (or `fix/`, `test/`, `docs/`, `ci/`) branches, use
+Conventional Commit messages (`feat: ...`, `fix: ...`), and merge into `main`
+through reviewed pull requests that pass CI. `main` is protected; direct pushes
+are blocked. Full rules: [docs/git-workflow.md](docs/git-workflow.md).
+
+Lint locally before pushing: `mvn checkstyle:check`
 
 ## License
 MIT — see LICENSE.

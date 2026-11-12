@@ -18,6 +18,7 @@
         <a th:href="@{/equipment}">Equipment</a>
         <a th:href="@{/reservations}">My reservations</a>
         <a sec:authorize="hasRole('LAB_MANAGER')" th:href="@{/reservations/manage}">Manage requests</a>
+        <a th:href="@{/account}">Account</a>
         <form th:action="@{/logout}" method="post" class="inline">
             <button type="submit" class="link">Log out</button>
         </form>
