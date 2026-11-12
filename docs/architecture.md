@@ -42,7 +42,7 @@ Each layer may only call the layer directly below it: controllers call services,
 ### Justification
 
 - **Fits the problem size.** LabLink has four entities and three roles. A layered monolith gives clear structure without the overhead of distributed services.
-- **Fits the team.** Every team member is new to building applications. Layers give each person an obvious place to put code and map directly onto the team roles: authentication (`security`, `AuthController`), reservations (`ReservationService`), front end (`templates/`), and database/inventory (`repository`, `InventoryService`, `schema.sql`).
+- **Fits the team.** Every team member is new to building applications. Layers give each person an obvious place to put code and map directly onto the team roles: authentication (`security`, `AuthController`), reservations (`ReservationService`), front end (`templates/`), and database/inventory (`repository`, `InventoryService`, `db/migration`).
 - **Fits the framework.** Spring Boot is built around this pattern (`@Controller`, `@Service`, `@Repository`), so we follow the framework instead of fighting it.
 - **Testability.** Business rules live in one class (`ReservationService`) and can be tested against a real in-memory database without a browser.
 - **One deployment.** A single JAR is easy to run locally and deploy for the final demo.
@@ -93,7 +93,7 @@ Source: [`diagrams/component.dot`](diagrams/component.dot) (Graphviz). Every con
 | Validation | Jakarta Bean Validation | (via Boot) | `@NotBlank`, `@Email`, etc. on forms |
 | Database (dev/test) | H2, in memory, MySQL mode | 2.x | Zero install; fresh data on every run |
 | Database (production) | MySQL | 8.x | Free, widely hosted, supports CHECK constraints |
-| Schema management | Hand-written DDL (`db/schema.sql`) | — | The DDL in the design document is exactly what runs (ADR-0003) |
+| Schema management | Flyway migrations (`db/migration`) | — | Versioned, repeatable schema setup; Hibernate validates against it (ADR-0005) |
 | Build | Maven | 3.9 | Standard for Spring; dependency management |
 | Testing | JUnit 5, Spring Boot Test, MockMvc, AssertJ | (via Boot) | Service tests against H2; full HTTP tests through security |
 | CI | GitHub Actions | — | Builds and runs all tests on every push and pull request |

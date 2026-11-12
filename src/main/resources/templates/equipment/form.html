@@ -21,6 +21,13 @@
                 <option th:each="lab : ${labs}" th:value="${lab.id}" th:text="${lab.name}"></option>
             </select>
         </label>
+        <label>Category
+            <select th:field="*{categoryId}">
+                <option value="">(none)</option>
+                <option th:each="c : ${categories}" th:value="${c.id}"
+                        th:text="${c.name + ' (max ' + c.maxLoanHours + ' h)'}"></option>
+            </select>
+        </label>
         <button type="submit">Save</button>
         <a th:href="@{/equipment}">Cancel</a>
     </form>

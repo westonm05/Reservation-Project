@@ -54,6 +54,7 @@ public class EquipmentController {
         equipment.setDescription(form.getDescription());
         equipment.setStatus(form.getStatus());
         equipment.setLab(form.getLabId() == null ? null : inventory.getLab(form.getLabId()));
+        equipment.setCategory(inventory.getCategory(form.getCategoryId()));
         try {
             inventory.saveEquipment(equipment);
         } catch (DataIntegrityViolationException e) {
@@ -78,6 +79,7 @@ public class EquipmentController {
     private String showForm(EquipmentForm form, Model model) {
         model.addAttribute("form", form);
         model.addAttribute("labs", inventory.allLabs());
+        model.addAttribute("categories", inventory.allCategories());
         model.addAttribute("statuses", EquipmentStatus.values());
         return "equipment/form";
     }

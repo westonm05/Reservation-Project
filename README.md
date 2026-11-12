@@ -55,7 +55,8 @@ src/main/java/edu/campbellsville/lablink/
   security/     Spring Security configuration and user lookup
   config/       Demo data loaded at startup
 src/main/resources/
-  db/schema.sql DDL that creates the tables
+  db/migration/  Flyway migration scripts (V1__..V4__) that build the schema
+  db/seed/       demo/test data (R__seed_test_data.sql)
   templates/    Thymeleaf pages
 docs/           Milestone 2 design documents, UML, ADRs, project plan
 ```
