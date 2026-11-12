@@ -3,7 +3,7 @@
 <head th:replace="~{fragments :: head('Users')}"></head>
 <body>
 <header th:replace="~{fragments :: nav}"></header>
-<main>
+<main id="main">
     <h1>Users</h1>
     <div th:replace="~{fragments :: flash}"></div>
     <p><a class="button" th:href="@{/admin/users/new}">Add account</a></p>

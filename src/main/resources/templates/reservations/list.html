@@ -3,7 +3,7 @@
 <head th:replace="~{fragments :: head('My reservations')}"></head>
 <body>
 <header th:replace="~{fragments :: nav}"></header>
-<main>
+<main id="main">
     <h1>My reservations</h1>
     <div th:replace="~{fragments :: flash}"></div>
     <p th:if="${#lists.isEmpty(reservations)}">You have no reservations.</p>

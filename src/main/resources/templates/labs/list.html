@@ -3,7 +3,7 @@
 <head th:replace="~{fragments :: head('Labs')}"></head>
 <body>
 <header th:replace="~{fragments :: nav}"></header>
-<main>
+<main id="main">
     <h1>Labs</h1>
     <div th:replace="~{fragments :: flash}"></div>
     <p sec:authorize="hasRole('LAB_MANAGER')"><a class="button" th:href="@{/labs/new}">Add lab</a></p>

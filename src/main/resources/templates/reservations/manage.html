@@ -3,7 +3,7 @@
 <head th:replace="~{fragments :: head('Manage requests')}"></head>
 <body>
 <header th:replace="~{fragments :: nav}"></header>
-<main>
+<main id="main">
     <h1>Pending requests</h1>
     <div th:replace="~{fragments :: flash}"></div>
     <p th:if="${#lists.isEmpty(pending)}">Nothing waiting for review.</p>

@@ -3,7 +3,7 @@
 <head th:replace="~{fragments :: head('Log in')}"></head>
 <body>
 <header th:replace="~{fragments :: nav}"></header>
-<main class="narrow">
+<main id="main" class="narrow">
     <h1>Log in</h1>
     <div th:replace="~{fragments :: flash}"></div>
     <p class="flash err" th:if="${param.error}">Wrong email or password.</p>

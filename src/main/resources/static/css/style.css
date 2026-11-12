@@ -1,50 +1,105 @@
-/* Minimal styling for the prototype. Dawson's UI work will replace this. */
+/*
+ * LabLink styles (UI refresh, backlog 3.7).
+ * Colours and sizes live in the variables below so the look can be changed in one place.
+ * Sections: base, layout, navigation, cards and forms, buttons, tables, messages and badges,
+ * page-specific pieces, small screens.
+ */
+
+/* ---------- base ---------- */
 :root {
-    --bg: #f6f7f9; --fg: #1d2330; --muted: #6b7280; --card: #fff; --line: #e3e6eb;
-    --accent: #1f5fbf; --ok: #1d7a46; --err: #b42318; --warn: #a15c07;
+    --bg: #f4f6f9; --fg: #18202e; --muted: #5d6675; --card: #fff; --line: #dde2ea;
+    --accent: #1f5fbf; --accent-dark: #174a96; --accent-soft: #e8f0fc;
+    --ok: #1d7a46; --ok-soft: #e7f5ec; --err: #b42318; --err-soft: #fdecea; --warn: #8f5100; --warn-soft: #fff4e0;
+    --radius: 8px; --shadow: 0 1px 2px rgba(16, 24, 40, .06), 0 1px 3px rgba(16, 24, 40, .08);
 }
 * { box-sizing: border-box; }
-body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; background: var(--bg); color: var(--fg); }
-main { max-width: 1000px; margin: 0 auto; padding: 24px 16px; }
-main.narrow { max-width: 460px; }
+body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; line-height: 1.5;
+       background: var(--bg); color: var(--fg); }
+h1 { font-size: 1.6rem; margin: 0 0 12px; }
+h2 { font-size: 1.2rem; margin: 24px 0 10px; }
 a { color: var(--accent); }
-.topbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;
-          padding: 12px 16px; background: var(--card); border-bottom: 1px solid var(--line); }
-.topbar nav { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
-.brand { font-weight: 700; font-size: 1.2rem; text-decoration: none; color: var(--fg); }
-.card { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
-form.card label { display: block; margin-bottom: 12px; font-weight: 600; }
+a:hover { color: var(--accent-dark); }
+/* A clear focus ring for keyboard users on every interactive element */
+a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+    outline: 3px solid #8fb4ee; outline-offset: 2px;
+}
+
+/* ---------- layout ---------- */
+main { max-width: 1040px; margin: 0 auto; padding: 28px 16px 48px; }
+main.narrow { max-width: 480px; }
+
+/* ---------- navigation ---------- */
+.topbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px 16px;
+          padding: 10px 20px; background: #13294b; color: #fff; position: sticky; top: 0; z-index: 10; }
+.brand { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; font-size: 1.2rem;
+         text-decoration: none; color: #fff; }
+.brand:hover { color: #fff; }
+.brand-mark { display: inline-grid; place-items: center; width: 28px; height: 28px; border-radius: 6px;
+              background: #3b82f6; font-size: .95rem; }
+.topbar nav { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; }
+.topbar nav a, .topbar nav .logout { color: #d6e2f5; text-decoration: none; padding: 6px 10px; border-radius: 6px; }
+.topbar nav a:hover, .topbar nav .logout:hover { background: rgba(255, 255, 255, .1); color: #fff; }
+.topbar nav a.active { background: rgba(255, 255, 255, .16); color: #fff; font-weight: 600; }
+.skip-link { position: absolute; left: -9999px; }
+.skip-link:focus { left: 12px; top: 8px; background: #fff; color: var(--accent); padding: 6px 10px; border-radius: 6px; }
+
+/* ---------- cards and forms ---------- */
+.card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px;
+        margin-bottom: 16px; box-shadow: var(--shadow); }
+form.card label { display: block; margin-bottom: 14px; font-weight: 600; }
 form.card label.check { font-weight: 400; }
-input, select, textarea { display: block; width: 100%; margin-top: 4px; padding: 8px; font: inherit;
-                          border: 1px solid var(--line); border-radius: 6px; background: #fff; }
-input[type=checkbox] { display: inline; width: auto; }
-button, .button { background: var(--accent); color: #fff; border: 0; border-radius: 6px; padding: 8px 14px;
-                  font: inherit; cursor: pointer; text-decoration: none; display: inline-block; }
-button.secondary { background: #6b7280; }
-button.link { background: none; color: var(--accent); padding: 0; }
+input, select, textarea { display: block; width: 100%; margin-top: 4px; padding: 9px 10px; font: inherit;
+                          border: 1px solid #c9d0db; border-radius: 6px; background: #fff; color: var(--fg); }
+input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+input[type=checkbox] { display: inline; width: auto; margin-right: 6px; }
+/* Form feedback: a field with a validation message gets a red border (th:errors only renders when there is an error) */
+label:has(.field-err) input, label:has(.field-err) select, label:has(.field-err) textarea {
+    border-color: var(--err); background: #fffafa;
+}
+.field-err { display: block; color: var(--err); font-weight: 400; font-size: .9rem; margin-top: 4px; }
+.field-err::before { content: "⚠ "; }
+.hint { color: var(--muted); font-size: .9rem; }
+form.card .hint { display: block; font-weight: 400; margin-top: 4px; }
+
+/* ---------- buttons ---------- */
+button, .button { background: var(--accent); color: #fff; border: 0; border-radius: 6px; padding: 9px 16px;
+                  font: inherit; font-weight: 600; cursor: pointer; text-decoration: none; display: inline-block; }
+button:hover, .button:hover { background: var(--accent-dark); color: #fff; }
+button.secondary { background: #e6eaf0; color: var(--fg); }
+button.secondary:hover { background: #d5dbe4; color: var(--fg); }
+button.link { background: none; color: var(--accent); padding: 0; font-weight: 400; }
+button.link:hover { background: none; text-decoration: underline; }
 button.link.danger { color: var(--err); }
 form.inline { display: inline; }
-table { width: 100%; border-collapse: collapse; background: var(--card); border: 1px solid var(--line); }
-th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+
+/* ---------- tables ---------- */
+table { width: 100%; border-collapse: separate; border-spacing: 0; background: var(--card);
+        border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
+th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { background: #f0f3f7; font-size: .85rem; text-transform: uppercase; letter-spacing: .03em; color: var(--muted); }
+tbody tr:last-child td { border-bottom: 0; }
+tbody tr:hover { background: #f8fafc; }
 td.actions { white-space: nowrap; }
-td.actions > * { margin-right: 8px; }
-.flash { padding: 10px 12px; border-radius: 6px; }
-.flash.ok { background: #e7f5ec; color: var(--ok); }
-.flash.err { background: #fdecea; color: var(--err); }
-.field-err { display: block; color: var(--err); font-weight: 400; font-size: .9rem; }
-.hint { color: var(--muted); font-size: .9rem; }
-.badge { font-size: .8rem; padding: 2px 8px; border-radius: 10px; background: #eef1f5; }
-.badge.APPROVED, .badge.AVAILABLE { background: #e7f5ec; color: var(--ok); }
-.badge.PENDING, .badge.MAINTENANCE { background: #fff4e0; color: var(--warn); }
-.badge.REJECTED, .badge.CANCELLED, .badge.RETIRED { background: #fdecea; color: var(--err); }
-/* Search/filter bar above the lab and equipment tables */
+td.actions > * { margin-right: 10px; }
+
+/* ---------- messages and badges ---------- */
+.flash { padding: 10px 14px; border-radius: 6px; border-left: 4px solid; }
+.flash.ok { background: var(--ok-soft); color: var(--ok); }
+.flash.err { background: var(--err-soft); color: var(--err); }
+.badge { font-size: .78rem; font-weight: 600; padding: 2px 9px; border-radius: 10px; background: #eef1f5; white-space: nowrap; }
+.badge.APPROVED, .badge.AVAILABLE { background: var(--ok-soft); color: var(--ok); }
+.badge.PENDING, .badge.MAINTENANCE { background: var(--warn-soft); color: var(--warn); }
+.badge.REJECTED, .badge.CANCELLED, .badge.RETIRED { background: var(--err-soft); color: var(--err); }
+
+/* ---------- page-specific pieces ---------- */
+/* Search/filter bar above the lab and equipment tables (3.8) */
 .filters { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; margin-bottom: 16px;
-           background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 12px; }
+           background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px;
+           box-shadow: var(--shadow); }
 .filters label { font-weight: 600; font-size: .9rem; flex: 1 1 180px; }
 .filters label.check { flex: 0 0 auto; font-weight: 400; padding-bottom: 8px; }
-@media (max-width: 640px) { table { display: block; overflow-x: auto; } }
 
-/* Lab availability week view (backlog 3.2) */
+/* Lab availability week view (3.2) */
 .week-nav { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin: 16px 0; }
 .week { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
 .day h2 { font-size: 1rem; margin: 0 0 8px; }
@@ -52,6 +107,25 @@ td.actions > * { margin-right: 8px; }
 .day li { margin-bottom: 8px; font-size: .9rem; }
 .day .free { color: var(--ok); margin: 0; }
 
-/* Role dropdown + Save button side by side on the admin Users page */
+/* Role dropdown + Save button side by side on the admin Users page (3.4) */
 .role-form { display: flex; gap: 6px; align-items: center; }
 .role-form select { margin-top: 0; width: auto; }
+
+/* Dashboard quick links */
+.quick-links { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin: 16px 0 8px; }
+.quick-links a { display: block; text-decoration: none; color: var(--fg); }
+.quick-links a:hover { border-color: var(--accent); color: var(--fg); }
+.quick-links strong { display: block; color: var(--accent); }
+
+/* ---------- small screens ---------- */
+@media (max-width: 640px) {
+    main { padding: 20px 12px 40px; }
+    h1 { font-size: 1.35rem; }
+    .topbar { padding: 10px 12px; }
+    /* Nav becomes one row you can swipe sideways instead of wrapping into a tall block */
+    .topbar nav { flex-wrap: nowrap; overflow-x: auto; width: 100%; padding-bottom: 2px; }
+    .topbar nav a, .topbar nav .logout { white-space: nowrap; }
+    /* Wide tables scroll sideways inside their own box instead of stretching the page */
+    table { display: block; overflow-x: auto; }
+    .week-nav { flex-direction: column; align-items: flex-start; }
+}

@@ -3,7 +3,7 @@
 <head th:replace="~{fragments :: head('Request reservation')}"></head>
 <body>
 <header th:replace="~{fragments :: nav}"></header>
-<main class="narrow">
+<main id="main" class="narrow">
     <h1>Request a reservation</h1>
     <p th:if="${resourceName}">For: <strong th:text="${resourceName}"></strong></p>
     <p class="flash err" th:if="${error}" th:text="${error}"></p>

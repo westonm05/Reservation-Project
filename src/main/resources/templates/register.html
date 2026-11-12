@@ -3,7 +3,7 @@
 <head th:replace="~{fragments :: head('Register')}"></head>
 <body>
 <header th:replace="~{fragments :: nav}"></header>
-<main class="narrow">
+<main id="main" class="narrow">
     <h1>Create an account</h1>
     <form th:action="@{/register}" th:object="${form}" method="post" class="card">
         <label>Full name

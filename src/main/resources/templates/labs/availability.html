@@ -3,7 +3,7 @@
 <head th:replace="~{fragments :: head('Availability')}"></head>
 <body>
 <header th:replace="~{fragments :: nav}"></header>
-<main>
+<main id="main">
     <h1 th:text="${lab.name} + ' availability'">Lab availability</h1>
     <p class="hint" th:text="${lab.building} + ' ' + ${lab.roomNumber} + ' · capacity ' + ${lab.capacity}">Location</p>
 
