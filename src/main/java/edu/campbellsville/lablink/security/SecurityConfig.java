@@ -3,6 +3,7 @@ package edu.campbellsville.lablink.security;
 import edu.campbellsville.lablink.model.Role;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -23,6 +24,8 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 // open to everyone
                 .requestMatchers("/login", "/register", "/css/**", "/error").permitAll()
+                // the public, read-only availability API (backlog 3.6): GET only, no login needed
+                .requestMatchers(HttpMethod.GET, "/api/**").permitAll()
                 // lab managers only: changing inventory and reviewing requests
                 .requestMatchers("/labs/new", "/labs/*/edit", "/labs/*/delete", "/labs/save").hasRole(LAB_MANAGER)
                 .requestMatchers("/equipment/new", "/equipment/*/edit", "/equipment/*/delete", "/equipment/save").hasRole(LAB_MANAGER)
