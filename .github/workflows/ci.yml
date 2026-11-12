@@ -1,5 +1,10 @@
-# Builds the app and runs every test on each push and pull request.
-# A red X on a pull request means something is broken; don't merge until it's green.
+# CI pipeline: runs on every push and on every pull request into main.
+# Two jobs run side by side, and each shows up as its own check on the pull request:
+#   - "Lint"          runs Checkstyle (config/checkstyle/checkstyle.xml) and marks problems on the PR diff
+#   - "Build & Test"  compiles the app, runs every unit and integration test, checks coverage,
+#                     and packages the runnable .jar
+# A red X on a pull request means something is broken. Branch protection on main
+# requires both checks to pass before the PR can be merged.
 name: CI
 
 on:
@@ -7,8 +12,14 @@ on:
   pull_request:
     branches: [ main ]
 
+# If you push again while a run is still going on the same branch, cancel the old run.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  build:
+  lint:
+    name: Lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -17,14 +28,43 @@ jobs:
           distribution: temurin
           java-version: '17'
           cache: maven
+      - name: Run Checkstyle
+        run: mvn -B checkstyle:check | tee checkstyle.log
+        shell: bash   # bash here means "-eo pipefail": the step fails if mvn fails, even through tee
+      # Turn each Checkstyle violation into a GitHub annotation, so it appears
+      # right on the offending line in the pull request's "Files changed" tab.
+      - name: Report lint results
+        if: always()
+        run: |
+          violations=$(grep -cE '^\[(ERROR|WARN)\] .+\.java:[0-9]+' checkstyle.log || true)
+          grep -E '^\[(ERROR|WARN)\] .+\.java:[0-9]+' checkstyle.log | \
+            sed -E "s#^\[(ERROR|WARN)\] ${GITHUB_WORKSPACE}/([^:]+):([0-9]+):([0-9]+:)? (.*)#::error file=\2,line=\3,title=Checkstyle::\5#" || true
+          {
+            echo "### Lint (Checkstyle)"
+            if [ "$violations" -eq 0 ]; then echo "No violations."; else echo "$violations violation(s). See annotations on the Files changed tab."; fi
+          } >> "$GITHUB_STEP_SUMMARY"
+          [ "$violations" -eq 0 ]
+
+  build-and-test:
+    name: Build & Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+      # verify = compile -> run all tests -> package the .jar -> check coverage.
+      # Lint is skipped here because the Lint job already runs it.
       - name: Build and test
-        run: mvn -B verify
-      # Posts test counts, any failing tests, and coverage per package as annotations on the run page.
+        run: mvn -B verify -Dcheckstyle.skip=true
+      # Posts test counts, failing tests, and coverage per package on the run's summary page.
       - name: Test and coverage summary
         if: always()
         run: python3 .github/scripts/test_summary.py
-      # Keep the coverage report and test results so they can be downloaded from the run page,
-      # even when a test fails (that's when they're most useful).
+      # Keep reports downloadable from the run page, even when a test fails
+      # (that's when they're most useful).
       - name: Upload coverage report
         if: always()
         uses: actions/upload-artifact@v4
@@ -39,3 +79,9 @@ jobs:
           name: surefire-test-results
           path: target/surefire-reports/
           if-no-files-found: ignore
+      - name: Upload application jar
+        uses: actions/upload-artifact@v4
+        with:
+          name: lablink-jar
+          path: target/lablink-*.jar
+          if-no-files-found: error
