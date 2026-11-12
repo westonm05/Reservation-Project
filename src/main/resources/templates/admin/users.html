@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('Users')}"></head>
+<body>
+<header th:replace="~{fragments :: nav}"></header>
+<main>
+    <h1>Users</h1>
+    <div th:replace="~{fragments :: flash}"></div>
+    <p><a class="button" th:href="@{/admin/users/new}">Add account</a></p>
+    <p class="hint">Students sign themselves up. Faculty and lab-manager accounts are added here.
+        You can't change your own role.</p>
+
+    <table>
+        <thead><tr><th>Name</th><th>Email</th><th>Department</th><th>Role</th><th>Member since</th></tr></thead>
+        <tbody>
+        <tr th:each="u : ${users}">
+            <td th:text="${u.fullName}">Name</td>
+            <td th:text="${u.email}">email</td>
+            <td th:text="${u.department != null} ? ${u.department.name} : '-'">Dept</td>
+            <td>
+                <form th:action="@{/admin/users/{id}/role(id=${u.id})}" method="post" class="role-form">
+                    <select name="role" th:aria-label="'Role for ' + ${u.fullName}">
+                        <option th:each="r : ${roles}" th:value="${r}" th:text="${r}"
+                                th:selected="${r == u.role}">ROLE</option>
+                    </select>
+                    <button type="submit" class="secondary">Save</button>
+                </form>
+            </td>
+            <td th:text="${#temporals.format(u.createdAt, 'MMM d, yyyy')}">date</td>
+        </tr>
+        </tbody>
+    </table>
+</main>
+</body>
+</html>
