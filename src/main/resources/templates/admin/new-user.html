@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('Add account')}"></head>
+<body>
+<header th:replace="~{fragments :: nav}"></header>
+<main class="narrow">
+    <h1>Add account</h1>
+    <form th:action="@{/admin/users}" th:object="${form}" method="post" class="card">
+        <label>Full name
+            <input type="text" th:field="*{fullName}">
+            <span class="field-err" th:errors="*{fullName}"></span>
+        </label>
+        <label>Email
+            <input type="email" th:field="*{email}">
+            <span class="field-err" th:errors="*{email}"></span>
+        </label>
+        <label>Temporary password
+            <input type="password" th:field="*{password}" autocomplete="new-password">
+            <span class="hint">Give this to the person; they can change it on their Account page.</span>
+            <span class="field-err" th:errors="*{password}"></span>
+        </label>
+        <label>Role
+            <select th:field="*{role}">
+                <option th:each="r : ${roles}" th:value="${r}" th:text="${r}">ROLE</option>
+            </select>
+            <span class="field-err" th:errors="*{role}"></span>
+        </label>
+        <button type="submit">Create account</button>
+        <a th:href="@{/admin/users}">Cancel</a>
+    </form>
+</main>
+</body>
+</html>

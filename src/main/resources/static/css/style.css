@@ -43,3 +43,7 @@ td.actions > * { margin-right: 8px; }
 .filters label { font-weight: 600; font-size: .9rem; flex: 1 1 180px; }
 .filters label.check { flex: 0 0 auto; font-weight: 400; padding-bottom: 8px; }
 @media (max-width: 640px) { table { display: block; overflow-x: auto; } }
+
+/* Role dropdown + Save button side by side on the admin Users page */
+.role-form { display: flex; gap: 6px; align-items: center; }
+.role-form select { margin-top: 0; width: auto; }
