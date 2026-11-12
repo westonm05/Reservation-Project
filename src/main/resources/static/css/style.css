@@ -38,3 +38,7 @@ td.actions > * { margin-right: 8px; }
 .badge.PENDING, .badge.MAINTENANCE { background: #fff4e0; color: var(--warn); }
 .badge.REJECTED, .badge.CANCELLED, .badge.RETIRED { background: #fdecea; color: var(--err); }
 @media (max-width: 640px) { table { display: block; overflow-x: auto; } }
+
+/* Role dropdown + Save button side by side on the admin Users page */
+.role-form { display: flex; gap: 6px; align-items: center; }
+.role-form select { margin-top: 0; width: auto; }

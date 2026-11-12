@@ -27,6 +27,8 @@ public class SecurityConfig {
                 .requestMatchers("/labs/new", "/labs/*/edit", "/labs/*/delete", "/labs/save").hasRole(LAB_MANAGER)
                 .requestMatchers("/equipment/new", "/equipment/*/edit", "/equipment/*/delete", "/equipment/save").hasRole(LAB_MANAGER)
                 .requestMatchers("/reservations/manage", "/reservations/*/approve", "/reservations/*/reject").hasRole(LAB_MANAGER)
+                // lab managers only: the user-administration pages (backlog 3.4)
+                .requestMatchers("/admin/**").hasRole(LAB_MANAGER)
                 // everything else: any logged-in user
                 .anyRequest().authenticated())
             .formLogin(form -> form
