@@ -7,6 +7,7 @@ import edu.campbellsville.lablink.model.User;
 import edu.campbellsville.lablink.repository.EquipmentRepository;
 import edu.campbellsville.lablink.repository.LabRepository;
 import edu.campbellsville.lablink.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -24,12 +25,22 @@ public class DevDataSeeder implements CommandLineRunner {
     private final LabRepository labs;
     private final EquipmentRepository equipment;
     private final PasswordEncoder encoder;
+    private final String managerPassword;
+    private final String facultyPassword;
+    private final String studentPassword;
 
-    public DevDataSeeder(UserRepository users, LabRepository labs, EquipmentRepository equipment, PasswordEncoder encoder) {
+    /** Demo passwords are read from configuration (see application.properties), never written in the code. */
+    public DevDataSeeder(UserRepository users, LabRepository labs, EquipmentRepository equipment, PasswordEncoder encoder,
+                         @Value("${lablink.demo.manager-password}") String managerPassword,
+                         @Value("${lablink.demo.faculty-password}") String facultyPassword,
+                         @Value("${lablink.demo.student-password}") String studentPassword) {
         this.users = users;
         this.labs = labs;
         this.equipment = equipment;
         this.encoder = encoder;
+        this.managerPassword = managerPassword;
+        this.facultyPassword = facultyPassword;
+        this.studentPassword = studentPassword;
     }
 
     @Override
@@ -37,9 +48,9 @@ public class DevDataSeeder implements CommandLineRunner {
         if (users.count() > 0) {
             return; // already seeded
         }
-        users.save(new User("manager@lablink.edu", "Demo Lab Manager", encoder.encode("manager123"), Role.LAB_MANAGER));
-        users.save(new User("faculty@lablink.edu", "Demo Faculty", encoder.encode("faculty123"), Role.FACULTY));
-        users.save(new User("student@lablink.edu", "Demo Student", encoder.encode("student123"), Role.STUDENT));
+        users.save(new User("manager@lablink.edu", "Demo Lab Manager", encoder.encode(managerPassword), Role.LAB_MANAGER));
+        users.save(new User("faculty@lablink.edu", "Demo Faculty", encoder.encode(facultyPassword), Role.FACULTY));
+        users.save(new User("student@lablink.edu", "Demo Student", encoder.encode(studentPassword), Role.STUDENT));
 
         Lab csLab = labs.save(new Lab("Computer Science Lab", "Science Building", "210", 30, "30 workstations with IntelliJ and Java 17"));
         Lab robotics = labs.save(new Lab("Robotics Lab", "Science Building", "118", 12, "Workbenches, soldering stations"));
