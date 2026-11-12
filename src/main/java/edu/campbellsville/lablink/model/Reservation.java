@@ -75,6 +75,7 @@ public class Reservation {
     private List<ReservationStatusChange> history = new ArrayList<>();
 
     public Reservation() {
+        // Required by JPA, which creates the object first and then fills in its fields from the database row.
     }
 
     /** Name of whatever is being reserved, for display on pages. */

@@ -20,6 +20,8 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 @RequestMapping("/labs")
 public class LabController {
 
+    private static final String FORM_VIEW = "labs/form";
+
     private final InventoryService inventory;
 
     public LabController(InventoryService inventory) {
@@ -36,14 +38,14 @@ public class LabController {
     public String createForm(Model model) {
         model.addAttribute("lab", new Lab());
         model.addAttribute("departments", inventory.allDepartments());
-        return "labs/form";
+        return FORM_VIEW;
     }
 
     @GetMapping("/{id}/edit")
     public String editForm(@PathVariable Long id, Model model) {
         model.addAttribute("lab", inventory.getLab(id));
         model.addAttribute("departments", inventory.allDepartments());
-        return "labs/form";
+        return FORM_VIEW;
     }
 
     @PostMapping("/save")
@@ -53,13 +55,13 @@ public class LabController {
         lab.setDepartment(inventory.getDepartment(departmentId));
         model.addAttribute("departments", inventory.allDepartments());
         if (errors.hasErrors()) {
-            return "labs/form";
+            return FORM_VIEW;
         }
         try {
             inventory.saveLab(lab);
         } catch (DataIntegrityViolationException e) {
             errors.rejectValue("name", "duplicate", "A lab with that name already exists");
-            return "labs/form";
+            return FORM_VIEW;
         }
         redirect.addFlashAttribute("message", "Lab saved.");
         return "redirect:/labs";

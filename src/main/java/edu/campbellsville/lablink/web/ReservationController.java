@@ -27,6 +27,10 @@ import java.security.Principal;
 @RequestMapping("/reservations")
 public class ReservationController {
 
+    private static final String REDIRECT_MY_RESERVATIONS = "redirect:/reservations";
+    private static final String MESSAGE = "message";
+    private static final String ERROR = "error";
+
     private final ReservationService reservations;
     private final InventoryService inventory;
     private final UserService users;
@@ -71,11 +75,11 @@ public class ReservationController {
                 throw new ReservationException("Choose a lab or equipment to reserve");
             }
         } catch (ReservationException e) {
-            model.addAttribute("error", e.getMessage());
+            model.addAttribute(ERROR, e.getMessage());
             return showForm(form, model);
         }
-        redirect.addFlashAttribute("message", "Reservation submitted.");
-        return "redirect:/reservations";
+        redirect.addFlashAttribute(MESSAGE, "Reservation submitted.");
+        return REDIRECT_MY_RESERVATIONS;
     }
 
     @PostMapping("/{id}/cancel")
@@ -90,8 +94,8 @@ public class ReservationController {
     public String rescheduleForm(@PathVariable Long id, Principal principal, Model model, RedirectAttributes redirect) {
         Reservation reservation = ownPending(id, principal);
         if (reservation == null) {
-            redirect.addFlashAttribute("error", "Only your own pending reservations can be rescheduled");
-            return "redirect:/reservations";
+            redirect.addFlashAttribute(ERROR, "Only your own pending reservations can be rescheduled");
+            return REDIRECT_MY_RESERVATIONS;
         }
         RescheduleForm form = new RescheduleForm();
         form.setStartTime(reservation.getStartTime());
@@ -106,16 +110,16 @@ public class ReservationController {
                              Principal principal, Model model, RedirectAttributes redirect) {
         Reservation reservation = ownPending(id, principal);
         if (reservation == null) {
-            redirect.addFlashAttribute("error", "Only your own pending reservations can be rescheduled");
-            return "redirect:/reservations";
+            redirect.addFlashAttribute(ERROR, "Only your own pending reservations can be rescheduled");
+            return REDIRECT_MY_RESERVATIONS;
         }
         if (!errors.hasErrors()) {
             try {
                 reservations.reschedule(id, currentUser(principal), form.getStartTime(), form.getEndTime());
-                redirect.addFlashAttribute("message", "Reservation rescheduled.");
-                return "redirect:/reservations";
+                redirect.addFlashAttribute(MESSAGE, "Reservation rescheduled.");
+                return REDIRECT_MY_RESERVATIONS;
             } catch (ReservationException e) {
-                model.addAttribute("error", e.getMessage());
+                model.addAttribute(ERROR, e.getMessage());
             }
         }
         model.addAttribute("reservation", reservation);
@@ -148,20 +152,28 @@ public class ReservationController {
     private String act(RedirectAttributes redirect, String target, String success, Runnable action) {
         try {
             action.run();
-            redirect.addFlashAttribute("message", success);
+            redirect.addFlashAttribute(MESSAGE, success);
         } catch (ReservationException e) {
-            redirect.addFlashAttribute("error", e.getMessage());
+            redirect.addFlashAttribute(ERROR, e.getMessage());
         }
         return "redirect:" + target;
     }
 
     private String showForm(ReservationForm form, Model model) {
-        String resourceName = form.getLabId() != null
-                ? inventory.getLab(form.getLabId()).getName()
-                : form.getEquipmentId() != null ? inventory.getEquipment(form.getEquipmentId()).getName() : null;
         model.addAttribute("form", form);
-        model.addAttribute("resourceName", resourceName);
+        model.addAttribute("resourceName", resourceName(form));
         return "reservations/form";
+    }
+
+    /** Name of the lab or equipment chosen on the form, or null if neither is chosen yet. */
+    private String resourceName(ReservationForm form) {
+        if (form.getLabId() != null) {
+            return inventory.getLab(form.getLabId()).getName();
+        }
+        if (form.getEquipmentId() != null) {
+            return inventory.getEquipment(form.getEquipmentId()).getName();
+        }
+        return null;
     }
 
     /** The current user's reservation with this id if it is still PENDING, otherwise null. */
