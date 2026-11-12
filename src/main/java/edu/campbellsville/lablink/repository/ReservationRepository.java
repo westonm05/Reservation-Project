@@ -21,6 +21,10 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
 
     long countByStatus(ReservationStatus status);
 
+    /** A lab's bookings that overlap a time window, earliest first. Used by the availability view and API. */
+    List<Reservation> findByLabAndStatusInAndStartTimeBeforeAndEndTimeAfterOrderByStartTimeAsc(
+            Lab lab, Collection<ReservationStatus> statuses, LocalDateTime end, LocalDateTime start);
+
     /*
      * Double-booking check. Two time windows overlap when
      *   existing.start < requested.end  AND  existing.end > requested.start
