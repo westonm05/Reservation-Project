@@ -1,6 +1,18 @@
 # LabLink UML Models
 
-All diagrams describe the code in the repository as of Milestone 2.
+All diagrams describe the code as of Milestone 3, once the Sprint 3 pull requests are merged
+(reschedule, account page / password change, Flyway database redesign, SonarQube fixes).
+
+**What changed since Milestone 2**
+
+| Change | Where it shows up |
+|---|---|
+| Reschedule a pending reservation (backlog 3.3) | New use case; `ReservationService.reschedule`; new sequence diagram §5; activity diagram §7 |
+| Account page and password change (backlog 3.5) | New use case; `AccountController`, `UserService.changePassword` |
+| Database redesign: 4 → 8 tables with Flyway migrations (backlog 3.1) | Class diagram adds `Department`, `EquipmentCategory`, `MaintenanceRecord`, `ReservationStatusChange` |
+| Every status change is recorded in `reservation_status_history` | `ReservationService.changeStatus` / `saveNew`; sequence diagrams §3 and §6 |
+| Equipment loan limit per category (`maxLoanHours`) | `ReservationService.checkLoanLimit`; activity diagram §7 |
+| `DevDataSeeder` removed; demo data now loaded by `R__seed_test_data.sql` | Not a UML element — see ADR-0005 |
 
 ## 1. Use case diagram
 
@@ -20,6 +32,8 @@ flowchart LR
         UC5(["Request reservation"])
         UC6(["View my reservations"])
         UC7(["Cancel reservation"])
+        UC14(["Reschedule pending reservation"])
+        UC15(["Change password"])
         UC13(["Auto-approve reservation"])
         UC8(["Manage labs (CRUD)"])
         UC9(["Manage equipment (CRUD)"])
@@ -29,7 +43,7 @@ flowchart LR
         UC12(["Reject request"])
     end
 
-    student --- UC1 & UC2 & UC3 & UC4 & UC5 & UC6 & UC7
+    student --- UC1 & UC2 & UC3 & UC4 & UC5 & UC6 & UC7 & UC14 & UC15
     faculty --- UC13
     manager --- UC8 & UC9 & UC10
     faculty -- "generalizes ▷" --> student
@@ -39,6 +53,7 @@ flowchart LR
     UC13 -. "«extend»" .-> UC5
     UC10 -. "«include»" .-> UC11
     UC10 -. "«include»" .-> UC12
+    UC14 -. "«include»" .-> UC5a
 ```
 
 | Use case | Actor | Summary |
@@ -49,6 +64,8 @@ flowchart LR
 | Request reservation | All | Pick a resource and time window; the system checks for conflicts |
 | Auto-approve | Faculty, Lab Manager | Requests from these roles skip the approval queue |
 | View / cancel my reservations | All | See own reservations; cancel ones still pending or approved |
+| Reschedule pending reservation | All | Move an own PENDING reservation to a new time; the conflict and loan-limit checks run again |
+| Change password | All | On the account page, enter the current password and a new one (confirmed twice) |
 | Manage labs / equipment | Lab Manager | Create, edit, delete inventory |
 | Review / approve / reject | Lab Manager | Decide on students' pending requests |
 
@@ -116,12 +133,44 @@ classDiagram
         +getResourceName() String
         +getResourceType() String
     }
+    class Department {
+        -Long id
+        -String code
+        -String name
+    }
+    class EquipmentCategory {
+        -Long id
+        -String name
+        -String description
+        -int maxLoanHours
+    }
+    class MaintenanceRecord {
+        -Long id
+        -String issue
+        -LocalDateTime reportedAt
+        -LocalDateTime resolvedAt
+        -String resolutionNotes
+    }
+    class ReservationStatusChange {
+        -Long id
+        -ReservationStatus oldStatus
+        -ReservationStatus newStatus
+        -LocalDateTime changedAt
+        -String note
+    }
 
     User "1" <-- "0..*" Reservation : requestedBy
     User "0..1" <-- "0..*" Reservation : reviewedBy
     Lab "0..1" <-- "0..*" Reservation : reserves
     Equipment "0..1" <-- "0..*" Reservation : reserves
     Lab "0..1" <-- "0..*" Equipment : locatedIn
+    Department "0..1" <-- "0..*" User : belongsTo
+    Department "0..1" <-- "0..*" Lab : ownedBy
+    EquipmentCategory "0..1" <-- "0..*" Equipment : category
+    Equipment "1" <-- "0..*" MaintenanceRecord : for
+    User "1" <-- "0..*" MaintenanceRecord : reportedBy
+    Reservation "1" *-- "1..*" ReservationStatusChange : history
+    User "1" <-- "0..*" ReservationStatusChange : changedBy
     User --> Role
     Equipment --> EquipmentStatus
     Reservation --> ReservationStatus
@@ -129,9 +178,12 @@ classDiagram
     class UserService {
         +registerStudent(fullName, email, rawPassword) User
         +emailTaken(email) boolean
+        +changePassword(email, currentPassword, newPassword)
         +getByEmail(email) User
     }
     class InventoryService {
+        +allDepartments() List~Department~
+        +allCategories() List~EquipmentCategory~
         +allLabs() List~Lab~
         +saveLab(Lab) Lab
         +deleteLab(Long)
@@ -145,9 +197,22 @@ classDiagram
         +approve(reservationId, User manager)
         +reject(reservationId, User manager)
         +cancel(reservationId, User requester)
+        +reschedule(reservationId, User requester, newStart, newEnd) Reservation
         +forUser(User) List~Reservation~
         +pending() List~Reservation~
+        +pendingCount() long
+        -requireOwner(Reservation, User, action)
+        -overlapsOtherBookings(Reservation, start, end) boolean
+        -checkLoanLimit(Equipment, start, end)
+        -changeStatus(Reservation, newStatus, User, note)
         -validateTimes(start, end)
+    }
+    class ReservationStatusChangeRepository {
+        <<interface>>
+    }
+    class AccountController {
+        +account() String
+        +changePassword(PasswordChangeForm) String
     }
     class ReservationRepository {
         <<interface>>
@@ -159,6 +224,8 @@ classDiagram
         +newForm(labId, equipmentId) String
         +create(ReservationForm) String
         +cancel(id) String
+        +rescheduleForm(id) String
+        +reschedule(id, RescheduleForm) String
         +manage() String
         +approve(id) String
         +reject(id) String
@@ -167,7 +234,10 @@ classDiagram
     ReservationController --> ReservationService
     ReservationController --> InventoryService
     ReservationController --> UserService
+    AccountController --> UserService
     ReservationService --> ReservationRepository
+    ReservationService --> ReservationStatusChangeRepository
+    ReservationService ..> ReservationStatusChange : records
     ReservationService ..> Reservation : creates
     ReservationService ..> ReservationException : throws
     class ReservationException
@@ -214,6 +284,7 @@ sequenceDiagram
         RR->>DB: INSERT INTO reservations …
         DB-->>RR: new id
         RR-->>RS: Reservation
+        RS->>DB: INSERT INTO reservation_status_history (null → PENDING/APPROVED)
         RS-->>RC: Reservation
         RC-->>B: 302 redirect to /reservations with "Reservation submitted."
         B->>S: Shows "My reservations" with status PENDING
@@ -260,7 +331,49 @@ sequenceDiagram
     SEC-->>B: 302 redirect to / (dashboard), session cookie
 ```
 
-## 5. Sequence diagram — Lab manager approves a request
+## 5. Sequence diagram — Reschedule a pending reservation (new in Milestone 3)
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor S as Student
+    participant B as Browser
+    participant RC as ReservationController
+    participant RS as ReservationService
+    participant RR as ReservationRepository
+
+    S->>B: Click "Reschedule" on a PENDING reservation
+    B->>RC: GET /reservations/42/reschedule
+    RC-->>B: Form pre-filled with the current start and end
+    S->>B: Enter new start and end, submit
+    B->>RC: POST /reservations/42/reschedule (newStart, newEnd, CSRF token)
+    RC->>RC: ownPending(42, user): own reservation and still PENDING?
+    alt not the owner, or not PENDING
+        RC-->>B: Redirect to /reservations with error
+    else owner and PENDING
+        RC->>RC: Bean validation (RescheduleForm)
+        RC->>RS: reschedule(42, user, newStart, newEnd)
+        RS->>RR: findById(42)
+        RR-->>RS: Reservation (PENDING)
+        RS->>RS: requireOwner + validateTimes(newStart, newEnd)
+        opt equipment reservation
+            RS->>RS: checkLoanLimit(equipment, newStart, newEnd)
+        end
+        RS->>RR: overlapsOtherBookings (ignores this reservation's own row)
+        alt overlap or invalid times
+            RR-->>RS: true
+            RS-->>RC: throw ReservationException
+            RC-->>B: Re-render reschedule form with error
+        else free
+            RS->>RS: setStartTime / setEndTime
+            Note over RS,RR: Transaction commits → UPDATE reservations
+            RS-->>RC: Reservation
+            RC-->>B: 302 redirect /reservations "Reservation rescheduled."
+        end
+    end
+```
+
+## 6. Sequence diagram — Lab manager approves a request
 
 ```mermaid
 sequenceDiagram
@@ -284,13 +397,14 @@ sequenceDiagram
         RS->>RR: findById(42)
         RR-->>RS: Reservation (PENDING)
         RS->>RS: status = APPROVED, reviewedBy = manager, reviewedAt = now
-        Note over RS,RR: Transaction commits → UPDATE reservations
+        RS->>RS: changeStatus() records PENDING → APPROVED in history
+        Note over RS,RR: Transaction commits → UPDATE reservations + INSERT reservation_status_history
         RS-->>RC: done
         RC-->>B: 302 redirect /reservations/manage "Reservation approved."
     end
 ```
 
-## 6. Activity diagram — Reservation life cycle
+## 7. Activity diagram — Reservation life cycle
 
 ```mermaid
 flowchart TD
@@ -300,7 +414,9 @@ flowchart TD
     valid -- No --> err1["Show validation error"] --> fill
     valid -- Yes --> avail{"Resource active /<br/>AVAILABLE?"}
     avail -- No --> err2["Show 'not available'"] --> stop1((◉))
-    avail -- Yes --> conflict{"Overlaps a PENDING or<br/>APPROVED reservation?"}
+    avail -- Yes --> loan{"Equipment: within the category's<br/>maxLoanHours?"}
+    loan -- No --> err4["Show 'longer than the loan limit'"] --> fill
+    loan -- Yes --> conflict{"Overlaps a PENDING or<br/>APPROVED reservation?"}
     conflict -- Yes --> err3["Show 'already booked'"] --> fill
     conflict -- No --> role{"Requester role?"}
     role -- "Faculty / Lab Manager" --> approved["Save as APPROVED"]
@@ -308,8 +424,10 @@ flowchart TD
     pending --> review{"Lab manager reviews"}
     review -- Approve --> approved
     review -- Reject --> rejected["Status = REJECTED"] --> stop2((◉))
+    pending -. "owner reschedules" .-> fill
     pending -. "owner cancels" .-> cancelled["Status = CANCELLED<br/>(slot freed)"]
     approved -. "owner cancels" .-> cancelled
     cancelled --> stop3((◉))
+    note["Every status change (create, approve, reject, cancel)<br/>adds a row to reservation_status_history"]
     approved --> use["Reservation time arrives:<br/>user uses the lab/equipment"] --> stop4((◉))
 ```
