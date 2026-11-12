@@ -1,6 +1,6 @@
 # LabLink Project Plan
 
-Last updated: October 18, 2026 (end of Milestone 2)
+Last updated: November 11, 2026 (Milestone 3)
 
 ## 1. Team and roles
 
@@ -17,7 +17,7 @@ Last updated: October 18, 2026 (end of Milestone 2)
 |---|---|---|---|
 | 1 | Proposal, project charter, repository setup | Sept 2026 | ✅ Complete |
 | 2 | Design & architecture + working prototype | Oct 18, 2026 | ✅ Complete (this submission) |
-| 3 | Core features complete, MySQL integration, API/advanced feature | Nov 15, 2026 | 🔄 In progress — see [sprint3-progress.md](sprint3-progress.md) |
+| 3 | Core features complete, MySQL integration, API/advanced feature | Nov 15, 2026 | ✅ Complete — see [sprint3-progress.md](sprint3-progress.md) |
 | 4 | Polish, testing, deployment, final demo | Target: early Dec 2026 | ⏳ Not started |
 
 (Milestone 3 and 4 dates are targets; adjust to the syllabus dates.)
@@ -45,7 +45,7 @@ Last updated: October 18, 2026 (end of Milestone 2)
 | 3.3 | Edit/reschedule a pending reservation | Isaiah | 3 h | — |
 | 3.4 | Admin page to create faculty/lab-manager accounts and change roles | Weston | 4 h | — |
 | 3.5 | Password change and account page | Weston | 3 h | — |
-| 3.6 | Advanced feature: email notification on approve/reject **or** public REST availability API (team to choose) | Weston + Isaiah | 8 h | 3.2 |
+| 3.6 | Advanced feature: public REST availability API (chosen over email notifications; see [api.md](api.md)) | Weston + Isaiah | 8 h | 3.2 |
 | 3.7 | UI redesign: layout, navigation, mobile-friendly tables, form feedback | Dawson | 8 h | — |
 | 3.8 | Search/filter labs and equipment | Dawson | 3 h | — |
 | 3.9 | Tests for inventory CRUD and new features; keep CI green | PJ | 4 h | ongoing |
@@ -60,8 +60,8 @@ Last updated: October 18, 2026 (end of Milestone 2)
 
 ## 6. Process
 
-- **Branching:** `feature/<name>` branches → pull request → at least one review (Isaiah, code review lead) → merge to `main`. No direct commits to `main`.
-- **CI:** every push and pull request runs `mvn verify`; a failing build blocks merging.
+- **Branching:** `feature/<name>` branches → pull request → review requested (Isaiah, code review lead) → squash merge to `main`. No direct commits to `main`. Since Nov 11, 2026 an approval is no longer required to merge (see [git-workflow.md §4](git-workflow.md#4-merge-policy)).
+- **CI:** every push and pull request runs `mvn verify` (tests + Checkstyle); a failing build blocks merging.
 - **Communication:** weekly check-in coordinated by Weston; tasks tracked as GitHub Issues assigned to owners above.
 - **Definition of done:** code merged through a reviewed PR, tests added and passing, docs updated if behavior changed.
 
@@ -69,8 +69,8 @@ Last updated: October 18, 2026 (end of Milestone 2)
 
 | Risk | Likelihood | Impact | Mitigation |
 |---|---|---|---|
-| Uneven contribution across team members | High (occurred in M2) | High | Assign M3 tasks as GitHub Issues with owners and dates; review progress at weekly check-ins; report through peer evaluations |
+| Uneven contribution across team members | High (occurred in M2 and M3) | High | Assign M3 tasks as GitHub Issues with owners and dates; review progress at weekly check-ins; report through peer evaluations |
 | Team new to Spring Boot | High | Medium | Commented prototype code as a reference; pair on first feature each |
-| H2 vs MySQL differences | Medium | Medium | Test against MySQL early in M3 (task 3.1) |
-| Deployment issues close to the final demo | Medium | High | Deploy a first version during M3, not M4 |
+| H2 vs MySQL differences | Medium | Medium | Flyway migrations are plain SQL and CI runs H2 in MySQL mode; run against a real MySQL database before the M4 deployment |
+| Deployment issues close to the final demo | Medium | High | Deploy a first version at the start of M4, not the end |
 | Double-booking race condition | Low | Low | Acceptable at campus scale; row locking documented in ADR-0004 |

@@ -17,4 +17,4 @@ Backlog item:
 <!-- Anything you want a second opinion on -->
 
 ---
-Before merging (see [docs/git-workflow.md](../docs/git-workflow.md)): 1 approval · Lint and Build & Test green · conversations resolved · squash and merge
+Before merging (see [docs/git-workflow.md](../docs/git-workflow.md)): review requested · Lint and Build & Test green · review comments answered · squash and merge
