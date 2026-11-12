@@ -56,3 +56,14 @@ if rows:
     classes = [f"{r['PACKAGE'].split('.')[-1]}.{r['CLASS']}: {pct(int(r['LINE_MISSED']), int(r['LINE_COVERED']))} "
                f"({r['LINE_MISSED']} lines missed)" for r in rows]
     print("::notice title=Coverage by class::" + "%0A".join(classes))
+
+# Also write a short table to the run's summary page (shown on the pull request's Checks tab).
+import os
+summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
+if summary_path:
+    with open(summary_path, "a") as out:
+        status = "❌ failing" if failures or errors else "✅ passing"
+        out.write("### Build & Test\n\n| Tests | Failures | Errors | Skipped | Status |\n|---|---|---|---|---|\n")
+        out.write(f"| {total} | {failures} | {errors} | {skipped} | {status} |\n")
+        for name in failed:
+            out.write(f"- `{name}`\n")
