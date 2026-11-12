@@ -5,6 +5,18 @@ CS450 Software Engineering, Campbellsville University
 LabLink lets students and faculty reserve lab spaces and equipment online,
 and lets lab managers manage inventory and approve requests.
 
+## Features (as of Milestone 3)
+- Registration and login with three roles: student, faculty, lab manager
+- Lab and equipment management (create, edit, delete) for lab managers
+- Search and filter labs and equipment
+- Reservation requests with double-booking prevention and equipment loan limits
+- Faculty requests auto-approved; lab managers approve or reject student requests
+- Reschedule or cancel your own reservations; full status history for every reservation
+- Week view of each lab's availability
+- Admin page: add faculty and lab-manager accounts, change roles
+- Account page with password change
+- **Public REST API** for lab availability: see [docs/api.md](docs/api.md)
+
 ## Team
 - Weston Mattingly — Project Coordinator, Authentication
 - Isaiah Bain — Reservations, Code Review Lead
@@ -48,17 +60,17 @@ The development database (H2) lives in memory, so it resets every time the app r
 
 ```
 src/main/java/edu/campbellsville/lablink/
-  model/        JPA entities (User, Lab, Equipment, Reservation) and enums
+  model/        JPA entities (User, Lab, Equipment, Reservation, Department, ...) and enums
   repository/   Spring Data repositories (database access)
-  service/      Business rules (UserService, InventoryService, ReservationService)
-  web/          Controllers and form classes
+  service/      Business rules (UserService, InventoryService, ReservationService, AvailabilityService)
+  web/          Controllers and form classes for the HTML pages
+  api/          REST API controller and its JSON records
   security/     Spring Security configuration and user lookup
-  config/       Demo data loaded at startup
 src/main/resources/
   db/migration/  Flyway migration scripts (V1__..V4__) that build the schema
   db/seed/       demo/test data (R__seed_test_data.sql)
   templates/    Thymeleaf pages
-docs/           Milestone 2 design documents, UML, ADRs, project plan
+docs/           Design documents, UML, ADRs, project plan, Sprint 3 progress, API reference
 ```
 
 ## Design Documents
@@ -68,8 +80,8 @@ design, ADRs and project plan.
 ## Branching & Pull Requests
 Work on `feature/<name>` (or `fix/`, `test/`, `docs/`, `ci/`) branches, use
 Conventional Commit messages (`feat: ...`, `fix: ...`), and merge into `main`
-through reviewed pull requests that pass CI. `main` is protected; direct pushes
-are blocked. Full rules: [docs/git-workflow.md](docs/git-workflow.md).
+through pull requests that pass CI (Lint and Build & Test). `main` is protected;
+direct pushes are blocked. Full rules: [docs/git-workflow.md](docs/git-workflow.md).
 
 Lint locally before pushing: `mvn checkstyle:check`
 

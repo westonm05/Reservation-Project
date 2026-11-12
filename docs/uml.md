@@ -1,18 +1,22 @@
 # LabLink UML Models
 
-All diagrams describe the code as of Milestone 3, once the Sprint 3 pull requests are merged
-(reschedule, account page / password change, Flyway database redesign, SonarQube fixes).
+All diagrams describe the code on `main` at the end of Milestone 3 (Sprint 3 pull requests #2–#13).
 
 **What changed since Milestone 2**
 
 | Change | Where it shows up |
 |---|---|
-| Reschedule a pending reservation (backlog 3.3) | New use case; `ReservationService.reschedule`; new sequence diagram §5; activity diagram §7 |
+| Reschedule a pending reservation (backlog 3.3) | New use case; `ReservationService.reschedule`; new sequence diagram §5; activity diagram §8 |
 | Account page and password change (backlog 3.5) | New use case; `AccountController`, `UserService.changePassword` |
 | Database redesign: 4 → 8 tables with Flyway migrations (backlog 3.1) | Class diagram adds `Department`, `EquipmentCategory`, `MaintenanceRecord`, `ReservationStatusChange` |
-| Every status change is recorded in `reservation_status_history` | `ReservationService.changeStatus` / `saveNew`; sequence diagrams §3 and §6 |
-| Equipment loan limit per category (`maxLoanHours`) | `ReservationService.checkLoanLimit`; activity diagram §7 |
+| Every status change is recorded in `reservation_status_history` | `ReservationService.changeStatus` / `saveNew`; sequence diagrams §3 and §7 |
+| Equipment loan limit per category (`maxLoanHours`) | `ReservationService.checkLoanLimit`; activity diagram §8 |
 | `DevDataSeeder` removed; demo data now loaded by `R__seed_test_data.sql` | Not a UML element — see ADR-0005 |
+| Search and filter labs and equipment (backlog 3.8) | New use case; `InventoryService.searchLabs` / `searchEquipment` |
+| Admin page for accounts and roles (backlog 3.4) | New use cases; `AdminController`, `UserService.createAccount` / `changeRole` |
+| Lab availability week view (backlog 3.2) | New use case; `AvailabilityService`, `AvailabilityController` |
+| Public REST availability API (backlog 3.6, advanced feature) | New *External system* actor; `AvailabilityApiController`, `ApiDtos`; sequence diagram §6 |
+| UI refresh (backlog 3.7) | `NavigationAdvice` (highlights the current section in the nav bar) |
 
 ## 1. Use case diagram
 
@@ -23,6 +27,7 @@ flowchart LR
     student(["🧑 Student"])
     faculty(["🧑‍🏫 Faculty"])
     manager(["🧑‍💼 Lab Manager"])
+    external(["🖥️ External system<br/>(e.g. department website)"])
 
     subgraph LabLink["LabLink system"]
         UC1(["Register account"])
@@ -34,6 +39,11 @@ flowchart LR
         UC7(["Cancel reservation"])
         UC14(["Reschedule pending reservation"])
         UC15(["Change password"])
+        UC16(["Search / filter labs and equipment"])
+        UC17(["View lab availability"])
+        UC18(["Add faculty / manager account"])
+        UC19(["Change a user's role"])
+        UC20(["Query availability API"])
         UC13(["Auto-approve reservation"])
         UC8(["Manage labs (CRUD)"])
         UC9(["Manage equipment (CRUD)"])
@@ -43,9 +53,10 @@ flowchart LR
         UC12(["Reject request"])
     end
 
-    student --- UC1 & UC2 & UC3 & UC4 & UC5 & UC6 & UC7 & UC14 & UC15
+    student --- UC1 & UC2 & UC3 & UC4 & UC5 & UC6 & UC7 & UC14 & UC15 & UC16 & UC17
     faculty --- UC13
-    manager --- UC8 & UC9 & UC10
+    manager --- UC8 & UC9 & UC10 & UC18 & UC19
+    external --- UC20
     faculty -- "generalizes ▷" --> student
     manager -- "generalizes ▷" --> faculty
 
@@ -66,6 +77,10 @@ flowchart LR
 | View / cancel my reservations | All | See own reservations; cancel ones still pending or approved |
 | Reschedule pending reservation | All | Move an own PENDING reservation to a new time; the conflict and loan-limit checks run again |
 | Change password | All | On the account page, enter the current password and a new one (confirmed twice) |
+| Search / filter | All | Narrow the lab list by text, department and active status; equipment by text, category and status |
+| View lab availability | All | A week of a lab's bookings, one card per day, with previous/next week links |
+| Add account / change role | Lab Manager | Create faculty and lab-manager accounts; change anyone's role except their own |
+| Query availability API | External system | `GET /api/labs` and `GET /api/labs/{id}/availability` return JSON; no login needed |
 | Manage labs / equipment | Lab Manager | Create, edit, delete inventory |
 | Review / approve / reject | Lab Manager | Decide on students' pending requests |
 
@@ -178,13 +193,18 @@ classDiagram
     class UserService {
         +registerStudent(fullName, email, rawPassword) User
         +emailTaken(email) boolean
+        +createAccount(fullName, email, rawPassword, Role) User
         +changePassword(email, currentPassword, newPassword)
+        +allUsers() List~User~
+        +changeRole(userId, Role, actingEmail) User
         +getByEmail(email) User
     }
     class InventoryService {
         +allDepartments() List~Department~
         +allCategories() List~EquipmentCategory~
         +allLabs() List~Lab~
+        +searchLabs(text, departmentId, activeOnly) List~Lab~
+        +searchEquipment(text, categoryId, EquipmentStatus) List~Equipment~
         +saveLab(Lab) Lab
         +deleteLab(Long)
         +allEquipment() List~Equipment~
@@ -214,6 +234,38 @@ classDiagram
         +account() String
         +changePassword(PasswordChangeForm) String
     }
+    class AdminController {
+        +list() String
+        +newForm() String
+        +create(NewAccountForm) String
+        +changeRole(id, Role) String
+    }
+    class AvailabilityService {
+        +getLab(labId) Lab
+        +bookings(labId, from, to) List~Reservation~
+        +isFree(labId, start, end) boolean
+        +week(labId, firstDay) List~DaySchedule~
+    }
+    class AvailabilityController {
+        +week(id, start) String
+    }
+    class AvailabilityApiController {
+        <<RestController>>
+        +labs() List~LabSummary~
+        +labAvailability(id, from, to) LabAvailability
+        +badRequest(IllegalArgumentException) ResponseEntity~ApiError~
+    }
+    class ApiDtos {
+        <<records>>
+        LabSummary
+        BusySlot
+        LabAvailability
+        ApiError
+    }
+    class NavigationAdvice {
+        <<ControllerAdvice>>
+        +currentPath(request) String
+    }
     class ReservationRepository {
         <<interface>>
         +existsByLabAndStatusInAndStartTimeBeforeAndEndTimeAfter(...) boolean
@@ -235,6 +287,12 @@ classDiagram
     ReservationController --> InventoryService
     ReservationController --> UserService
     AccountController --> UserService
+    AdminController --> UserService
+    AvailabilityController --> AvailabilityService
+    AvailabilityApiController --> AvailabilityService
+    AvailabilityApiController --> InventoryService
+    AvailabilityApiController ..> ApiDtos : returns
+    AvailabilityService --> ReservationRepository
     ReservationService --> ReservationRepository
     ReservationService --> ReservationStatusChangeRepository
     ReservationService ..> ReservationStatusChange : records
@@ -373,7 +431,40 @@ sequenceDiagram
     end
 ```
 
-## 6. Sequence diagram — Lab manager approves a request
+## 6. Sequence diagram — External system checks lab availability through the REST API (new in Milestone 3)
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor X as External system
+    participant SEC as Security filter chain
+    participant AC as AvailabilityApiController
+    participant AS as AvailabilityService
+    participant LR as LabRepository
+    participant RR as ReservationRepository
+
+    X->>SEC: GET /api/labs/5/availability?from=2026-09-22T08:00&to=2026-09-22T18:00
+    SEC->>SEC: GET /api/** is public: no login needed
+    SEC->>AC: labAvailability(5, from, to)
+    AC->>AS: getLab(5)
+    AS->>LR: findById(5)
+    alt no such lab
+        LR-->>AS: empty
+        AS-->>AC: throw IllegalArgumentException("Lab not found")
+        AC-->>X: 404 {"status":404,"error":"Lab not found"}
+    else lab exists
+        LR-->>AS: Lab
+        AC->>AS: bookings(5, from, to)
+        AS->>AS: window valid? (to after from, at most 31 days)
+        AS->>RR: findByLabAndStatusIn…(lab, [PENDING, APPROVED], to, from)
+        RR-->>AS: reservations, earliest first
+        AS-->>AC: List of Reservation
+        AC->>AC: map to BusySlot records (start, end, status, no names)
+        AC-->>X: 200 {"labName":…, "free": false, "busy": [ … ]}
+    end
+```
+
+## 7. Sequence diagram — Lab manager approves a request
 
 ```mermaid
 sequenceDiagram
@@ -404,7 +495,7 @@ sequenceDiagram
     end
 ```
 
-## 7. Activity diagram — Reservation life cycle
+## 8. Activity diagram — Reservation life cycle
 
 ```mermaid
 flowchart TD

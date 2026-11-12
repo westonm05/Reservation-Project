@@ -7,7 +7,7 @@ Everyone on the team follows these rules; branch protection on GitHub enforces t
 
 We use **GitHub Flow**: one long-lived branch, `main`, plus short-lived branches for each piece of work.
 
-- **`main` is always working code.** Every commit on `main` has passed CI and been reviewed.
+- **`main` is always working code.** Every commit on `main` came through a pull request and passed CI.
   Nobody pushes to `main` directly; changes only arrive through pull requests.
 - **One branch per task.** Branch off the latest `main`, do one feature or fix, open a PR, merge, delete the branch.
   Aim for branches that live a few days, not weeks, so merges stay small.
@@ -71,13 +71,16 @@ Rules of thumb: one logical change per commit; never commit code that doesn't co
 
 ## 4. Merge policy
 
-A PR can be merged into `main` only when **all** of these are true (GitHub enforces the first four):
+A PR can be merged into `main` only when these are true (GitHub enforces the first two):
 
-- ✅ At least **1 approving review** from someone other than the author
 - ✅ **Lint** and **Build & Test** checks are green
 - ✅ The branch is **up to date with `main`** (click *Update branch* if GitHub asks)
-- ✅ All review conversations are **resolved**
+- ✅ A teammate has been asked to review, and any review comments have been answered
 - ✅ The description is complete
+
+> **Change on November 11, 2026:** required approvals and required conversation resolution were turned
+> off in the `protect-main` ruleset. Reviews were not arriving, which blocked every Milestone 3 merge.
+> Review is still requested on every PR; passing CI is what GitHub now enforces.
 
 How we merge:
 
@@ -92,10 +95,10 @@ Enforced by the repository ruleset **`protect-main`** (**Settings → Rules → 
 
 | Rule | Value | Why |
 |---|---|---|
-| Require a pull request before merging | On | No direct pushes; every change is reviewed |
-| Required approvals | 1 | A second set of eyes on every change; authors cannot approve their own PRs |
+| Require a pull request before merging | On | No direct pushes; every change goes through a PR |
+| Required approvals | 0 (was 1 until Nov 11, 2026) | Review is requested but no longer blocks a merge; see §4 |
 | Dismiss stale approvals when new commits are pushed | On | An approval covers the code actually being merged |
-| Require conversation resolution before merging | On | Review comments can't be ignored |
+| Require conversation resolution before merging | Off (was On until Nov 11, 2026) | See §4 |
 | Allowed merge methods | Squash only | Enforces the merge policy above |
 | Require status checks to pass | On: `Lint`, `Build & Test` (GitHub Actions) | Broken or unlinted code can't reach `main` |
 | Require branches to be up to date before merging | On | CI ran against the latest `main` |
