@@ -3,7 +3,7 @@
 <head th:replace="~{fragments :: head('Reschedule reservation')}"></head>
 <body>
 <header th:replace="~{fragments :: nav}"></header>
-<main class="narrow">
+<main id="main" class="narrow">
     <h1>Reschedule reservation</h1>
     <p>For: <strong th:text="${reservation.resourceName}"></strong>
         (currently <span th:text="${#temporals.format(reservation.startTime, 'MMM d, yyyy h:mm a')}"></span>

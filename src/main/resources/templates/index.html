@@ -1,15 +1,23 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head th:replace="~{fragments :: head('Dashboard')}"></head>
 <body>
 <header th:replace="~{fragments :: nav}"></header>
-<main>
+<main id="main">
     <h1 th:text="'Welcome, ' + ${user.fullName}">Welcome</h1>
     <p class="hint" th:text="'Signed in as ' + ${user.email} + ' (' + ${user.role} + ')'"></p>
 
     <div class="card" th:if="${pendingCount != null}">
         <strong th:text="${pendingCount}">0</strong> reservation request(s) waiting for review.
         <a th:href="@{/reservations/manage}">Review them</a>
+    </div>
+
+    <!-- Quick links to the most common tasks (backlog 3.7) -->
+    <div class="quick-links">
+        <a class="card" th:href="@{/labs}"><strong>Find a lab</strong><span class="hint">Search labs and check when they're free</span></a>
+        <a class="card" th:href="@{/equipment}"><strong>Borrow equipment</strong><span class="hint">Laptops, printers, kits and more</span></a>
+        <a class="card" th:href="@{/reservations}"><strong>My reservations</strong><span class="hint">Reschedule or cancel a booking</span></a>
+        <a class="card" sec:authorize="hasRole('LAB_MANAGER')" th:href="@{/admin/users}"><strong>Manage users</strong><span class="hint">Add accounts and change roles</span></a>
     </div>
 
     <h2>Your upcoming reservations</h2>

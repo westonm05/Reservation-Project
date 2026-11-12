@@ -11,24 +11,40 @@
 
 <body>
 
+<!--
+    Navigation bar. currentPath comes from NavigationAdvice; the link for the section you're in gets
+    the "active" class and aria-current="page" so screen readers announce it too (backlog 3.7).
+-->
 <header th:fragment="nav" class="topbar">
-    <a class="brand" th:href="@{/}">LabLink</a>
-    <nav sec:authorize="isAuthenticated()">
-        <a th:href="@{/labs}">Labs</a>
-        <a th:href="@{/equipment}">Equipment</a>
-        <a th:href="@{/reservations}">My reservations</a>
-        <a sec:authorize="hasRole('LAB_MANAGER')" th:href="@{/reservations/manage}">Manage requests</a>
-        <a sec:authorize="hasRole('LAB_MANAGER')" th:href="@{/admin/users}">Users</a>
-        <a th:href="@{/account}">Account</a>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <a class="brand" th:href="@{/}"><span class="brand-mark" aria-hidden="true">L</span>LabLink</a>
+    <nav sec:authorize="isAuthenticated()" aria-label="Main">
+        <a th:href="@{/}" th:classappend="${currentPath == '/'} ? 'active'"
+           th:attr="aria-current=${currentPath == '/'} ? 'page'">Dashboard</a>
+        <a th:href="@{/labs}" th:classappend="${#strings.startsWith(currentPath, '/labs')} ? 'active'"
+           th:attr="aria-current=${#strings.startsWith(currentPath, '/labs')} ? 'page'">Labs</a>
+        <a th:href="@{/equipment}" th:classappend="${#strings.startsWith(currentPath, '/equipment')} ? 'active'"
+           th:attr="aria-current=${#strings.startsWith(currentPath, '/equipment')} ? 'page'">Equipment</a>
+        <a th:href="@{/reservations}" th:classappend="${currentPath == '/reservations'} ? 'active'"
+           th:attr="aria-current=${currentPath == '/reservations'} ? 'page'">My reservations</a>
+        <a sec:authorize="hasRole('LAB_MANAGER')" th:href="@{/reservations/manage}"
+           th:classappend="${currentPath == '/reservations/manage'} ? 'active'"
+           th:attr="aria-current=${currentPath == '/reservations/manage'} ? 'page'">Manage requests</a>
+        <a sec:authorize="hasRole('LAB_MANAGER')" th:href="@{/admin/users}"
+           th:classappend="${#strings.startsWith(currentPath, '/admin')} ? 'active'"
+           th:attr="aria-current=${#strings.startsWith(currentPath, '/admin')} ? 'page'">Users</a>
+        <a th:href="@{/account}" th:classappend="${currentPath == '/account'} ? 'active'"
+           th:attr="aria-current=${currentPath == '/account'} ? 'page'">Account</a>
         <form th:action="@{/logout}" method="post" class="inline">
-            <button type="submit" class="link">Log out</button>
+            <button type="submit" class="link logout">Log out</button>
         </form>
     </nav>
 </header>
 
+<!-- Success messages are announced politely; errors interrupt (role="alert"). -->
 <div th:fragment="flash">
-    <p class="flash ok" th:if="${message}" th:text="${message}"></p>
-    <p class="flash err" th:if="${error}" th:text="${error}"></p>
+    <p class="flash ok" role="status" th:if="${message}" th:text="${message}"></p>
+    <p class="flash err" role="alert" th:if="${error}" th:text="${error}"></p>
 </div>
 
 </body>

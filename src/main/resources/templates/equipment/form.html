@@ -3,7 +3,7 @@
 <head th:replace="~{fragments :: head('Equipment')}"></head>
 <body>
 <header th:replace="~{fragments :: nav}"></header>
-<main class="narrow">
+<main id="main" class="narrow">
     <h1 th:text="${form.id == null} ? 'Add equipment' : 'Edit equipment'">Equipment</h1>
     <form th:action="@{/equipment/save}" th:object="${form}" method="post" class="card">
         <input type="hidden" th:field="*{id}">
