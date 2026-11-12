@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('Availability')}"></head>
+<body>
+<header th:replace="~{fragments :: nav}"></header>
+<main>
+    <h1 th:text="${lab.name} + ' availability'">Lab availability</h1>
+    <p class="hint" th:text="${lab.building} + ' ' + ${lab.roomNumber} + ' · capacity ' + ${lab.capacity}">Location</p>
+
+    <nav class="week-nav">
+        <a th:href="@{/labs/{id}/availability(id=${lab.id},start=${previousWeek})}">&larr; Previous week</a>
+        <strong th:text="'Week of ' + ${#temporals.format(start, 'MMMM d, yyyy')}">Week of</strong>
+        <a th:href="@{/labs/{id}/availability(id=${lab.id},start=${nextWeek})}">Next week &rarr;</a>
+    </nav>
+
+    <div class="week">
+        <section class="day card" th:each="day : ${days}">
+            <h2 th:text="${#temporals.format(day.date(), 'EEE MMM d')}">Mon Nov 16</h2>
+            <p class="free" th:if="${day.isFree()}">Free all day</p>
+            <ul th:unless="${day.isFree()}">
+                <li th:each="r : ${day.bookings()}">
+                    <span th:text="${#temporals.format(r.startTime, 'MMM d h:mm a')} + ' – ' + ${#temporals.format(r.endTime, 'MMM d h:mm a')}">time</span>
+                    <span th:class="'badge ' + ${r.status}" th:text="${r.status}">STATUS</span>
+                </li>
+            </ul>
+        </section>
+    </div>
+
+    <p>
+        <a class="button" th:if="${lab.active}" th:href="@{/reservations/new(labId=${lab.id})}">Reserve this lab</a>
+        <a th:href="@{/labs}">Back to labs</a>
+    </p>
+    <p class="hint">Times shown are booked (pending or approved). Anything not listed is open.</p>
+</main>
+</body>
+</html>

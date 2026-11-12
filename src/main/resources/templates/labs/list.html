@@ -38,6 +38,7 @@
             <td th:text="${lab.description}"></td>
             <td class="actions">
                 <a th:if="${lab.active}" th:href="@{/reservations/new(labId=${lab.id})}">Reserve</a>
+                <a th:href="@{/labs/{id}/availability(id=${lab.id})}">Availability</a>
                 <th:block sec:authorize="hasRole('LAB_MANAGER')">
                     <a th:href="@{/labs/{id}/edit(id=${lab.id})}">Edit</a>
                     <form th:action="@{/labs/{id}/delete(id=${lab.id})}" method="post" class="inline"

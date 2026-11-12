@@ -44,6 +44,14 @@ td.actions > * { margin-right: 8px; }
 .filters label.check { flex: 0 0 auto; font-weight: 400; padding-bottom: 8px; }
 @media (max-width: 640px) { table { display: block; overflow-x: auto; } }
 
+/* Lab availability week view (backlog 3.2) */
+.week-nav { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin: 16px 0; }
+.week { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
+.day h2 { font-size: 1rem; margin: 0 0 8px; }
+.day ul { list-style: none; padding: 0; margin: 0; }
+.day li { margin-bottom: 8px; font-size: .9rem; }
+.day .free { color: var(--ok); margin: 0; }
+
 /* Role dropdown + Save button side by side on the admin Users page */
 .role-form { display: flex; gap: 6px; align-items: center; }
 .role-form select { margin-top: 0; width: auto; }
