@@ -12,12 +12,15 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 /** Lab pages. Viewing is open to all logged-in users; changes are limited to lab managers (see SecurityConfig). */
 @Controller
 @RequestMapping("/labs")
 public class LabController {
+
+    private static final String FORM_VIEW = "labs/form";
 
     private final InventoryService inventory;
 
@@ -34,25 +37,31 @@ public class LabController {
     @GetMapping("/new")
     public String createForm(Model model) {
         model.addAttribute("lab", new Lab());
-        return "labs/form";
+        model.addAttribute("departments", inventory.allDepartments());
+        return FORM_VIEW;
     }
 
     @GetMapping("/{id}/edit")
     public String editForm(@PathVariable Long id, Model model) {
         model.addAttribute("lab", inventory.getLab(id));
-        return "labs/form";
+        model.addAttribute("departments", inventory.allDepartments());
+        return FORM_VIEW;
     }
 
     @PostMapping("/save")
-    public String save(@Valid @ModelAttribute("lab") Lab lab, BindingResult errors, RedirectAttributes redirect) {
+    public String save(@Valid @ModelAttribute("lab") Lab lab, BindingResult errors,
+                       @RequestParam(required = false) Long departmentId, Model model, RedirectAttributes redirect) {
+        // The dropdown sends the department's id; look up the Department it refers to.
+        lab.setDepartment(inventory.getDepartment(departmentId));
+        model.addAttribute("departments", inventory.allDepartments());
         if (errors.hasErrors()) {
-            return "labs/form";
+            return FORM_VIEW;
         }
         try {
             inventory.saveLab(lab);
         } catch (DataIntegrityViolationException e) {
             errors.rejectValue("name", "duplicate", "A lab with that name already exists");
-            return "labs/form";
+            return FORM_VIEW;
         }
         redirect.addFlashAttribute("message", "Lab saved.");
         return "redirect:/labs";

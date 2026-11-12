@@ -28,7 +28,7 @@ Last updated: October 18, 2026 (end of Milestone 2)
 |---|---|---|---|
 | Architecture document (pattern, component diagram, tech stack) | `docs/architecture.md` | ✅ Done | Weston |
 | UML: use case, class, 3 sequence, activity | `docs/uml.md` | ✅ Done | Weston |
-| ER diagram, 3NF schema, DDL | `docs/database-design.md`, `src/main/resources/db/schema.sql` | ✅ Done | Weston |
+| ER diagram, 3NF schema, DDL | `docs/database-design.md`, `src/main/resources/db/migration/` | ✅ Done | Weston |
 | ADRs (4) | `docs/adr/` | ✅ Done | Weston |
 | Working prototype | `src/` | ✅ Done | Weston |
 | CI pipeline (GitHub Actions) | `.github/workflows/ci.yml` | ✅ Done | Weston |

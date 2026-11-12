@@ -1,5 +1,6 @@
 package edu.campbellsville.lablink.security;
 
+import edu.campbellsville.lablink.model.Role;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -14,6 +15,8 @@ import org.springframework.security.web.SecurityFilterChain;
 @Configuration
 public class SecurityConfig {
 
+    private static final String LAB_MANAGER = Role.LAB_MANAGER.name();
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
@@ -21,9 +24,9 @@ public class SecurityConfig {
                 // open to everyone
                 .requestMatchers("/login", "/register", "/css/**", "/error").permitAll()
                 // lab managers only: changing inventory and reviewing requests
-                .requestMatchers("/labs/new", "/labs/*/edit", "/labs/*/delete", "/labs/save").hasRole("LAB_MANAGER")
-                .requestMatchers("/equipment/new", "/equipment/*/edit", "/equipment/*/delete", "/equipment/save").hasRole("LAB_MANAGER")
-                .requestMatchers("/reservations/manage", "/reservations/*/approve", "/reservations/*/reject").hasRole("LAB_MANAGER")
+                .requestMatchers("/labs/new", "/labs/*/edit", "/labs/*/delete", "/labs/save").hasRole(LAB_MANAGER)
+                .requestMatchers("/equipment/new", "/equipment/*/edit", "/equipment/*/delete", "/equipment/save").hasRole(LAB_MANAGER)
+                .requestMatchers("/reservations/manage", "/reservations/*/approve", "/reservations/*/reject").hasRole(LAB_MANAGER)
                 // everything else: any logged-in user
                 .anyRequest().authenticated())
             .formLogin(form -> form

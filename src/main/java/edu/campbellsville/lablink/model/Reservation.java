@@ -9,9 +9,15 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * A request to use either one lab OR one piece of equipment for a time window.
@@ -47,6 +53,7 @@ public class Reservation {
     private String purpose;
 
     @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.VARCHAR)
     @Column(nullable = false)
     private ReservationStatus status = ReservationStatus.PENDING;
 
@@ -61,7 +68,14 @@ public class Reservation {
     @Column(name = "reviewed_at")
     private LocalDateTime reviewedAt;
 
+    // One reservation has many status-history rows. "mappedBy" means the foreign key lives on the
+    // other side (ReservationStatusChange.reservation); this list is a read-only view of those rows.
+    @OneToMany(mappedBy = "reservation")
+    @OrderBy("changedAt ASC, id ASC")
+    private List<ReservationStatusChange> history = new ArrayList<>();
+
     public Reservation() {
+        // Required by JPA, which creates the object first and then fills in its fields from the database row.
     }
 
     /** Name of whatever is being reserved, for display on pages. */
@@ -94,4 +108,5 @@ public class Reservation {
     public void setReviewedBy(User reviewedBy) { this.reviewedBy = reviewedBy; }
     public LocalDateTime getReviewedAt() { return reviewedAt; }
     public void setReviewedAt(LocalDateTime reviewedAt) { this.reviewedAt = reviewedAt; }
+    public List<ReservationStatusChange> getHistory() { return history; }
 }

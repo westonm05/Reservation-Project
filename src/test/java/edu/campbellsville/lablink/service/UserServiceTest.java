@@ -79,4 +79,43 @@ class UserServiceTest {
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("ghost@lablink.edu");
     }
+
+    @Test
+    void changePasswordStoresNewHashWhenCurrentPasswordIsCorrect() {
+        User u = new User("student@lablink.edu", "Demo Student", "OLD_HASH", Role.STUDENT);
+        when(userRepository.findByEmail("student@lablink.edu")).thenReturn(Optional.of(u));
+        when(passwordEncoder.matches("student123", "OLD_HASH")).thenReturn(true);
+        when(passwordEncoder.matches("newpassword1", "OLD_HASH")).thenReturn(false);
+        when(passwordEncoder.encode("newpassword1")).thenReturn("NEW_HASH");
+
+        service.changePassword("student@lablink.edu", "student123", "newpassword1");
+
+        assertThat(u.getPasswordHash()).isEqualTo("NEW_HASH");
+        verify(userRepository).save(u);
+    }
+
+    @Test
+    void changePasswordRejectsWrongCurrentPassword() {
+        User u = new User("student@lablink.edu", "Demo Student", "OLD_HASH", Role.STUDENT);
+        when(userRepository.findByEmail("student@lablink.edu")).thenReturn(Optional.of(u));
+        when(passwordEncoder.matches("wrong-guess", "OLD_HASH")).thenReturn(false);
+
+        assertThatThrownBy(() -> service.changePassword("student@lablink.edu", "wrong-guess", "newpassword1"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Current password is incorrect");
+        assertThat(u.getPasswordHash()).isEqualTo("OLD_HASH");
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void changePasswordRejectsReusingTheSamePassword() {
+        User u = new User("student@lablink.edu", "Demo Student", "OLD_HASH", Role.STUDENT);
+        when(userRepository.findByEmail("student@lablink.edu")).thenReturn(Optional.of(u));
+        when(passwordEncoder.matches("student123", "OLD_HASH")).thenReturn(true);
+
+        assertThatThrownBy(() -> service.changePassword("student@lablink.edu", "student123", "student123"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("must be different");
+        verify(userRepository, never()).save(any());
+    }
 }

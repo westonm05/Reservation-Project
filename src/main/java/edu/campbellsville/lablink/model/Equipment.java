@@ -10,6 +10,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 /** A reservable item (laptop, oscilloscope, 3D printer...). It may live in a lab or be portable. */
 @Entity
@@ -29,6 +31,7 @@ public class Equipment {
     private String description;
 
     @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.VARCHAR)
     @Column(nullable = false)
     private EquipmentStatus status = EquipmentStatus.AVAILABLE;
 
@@ -36,6 +39,11 @@ public class Equipment {
     @ManyToOne
     @JoinColumn(name = "lab_id")
     private Lab lab;
+
+    // Many items share one category (Laptop, 3D Printer...). Optional.
+    @ManyToOne
+    @JoinColumn(name = "category_id")
+    private EquipmentCategory category;
 
     public Equipment() {
     }
@@ -58,4 +66,6 @@ public class Equipment {
     public void setStatus(EquipmentStatus status) { this.status = status; }
     public Lab getLab() { return lab; }
     public void setLab(Lab lab) { this.lab = lab; }
+    public EquipmentCategory getCategory() { return category; }
+    public void setCategory(EquipmentCategory category) { this.category = category; }
 }

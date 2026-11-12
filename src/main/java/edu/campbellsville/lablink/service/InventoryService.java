@@ -1,7 +1,11 @@
 package edu.campbellsville.lablink.service;
 
+import edu.campbellsville.lablink.model.Department;
 import edu.campbellsville.lablink.model.Equipment;
+import edu.campbellsville.lablink.model.EquipmentCategory;
 import edu.campbellsville.lablink.model.Lab;
+import edu.campbellsville.lablink.repository.DepartmentRepository;
+import edu.campbellsville.lablink.repository.EquipmentCategoryRepository;
 import edu.campbellsville.lablink.repository.EquipmentRepository;
 import edu.campbellsville.lablink.repository.LabRepository;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -16,10 +20,37 @@ public class InventoryService {
 
     private final LabRepository labRepository;
     private final EquipmentRepository equipmentRepository;
+    private final DepartmentRepository departmentRepository;
+    private final EquipmentCategoryRepository categoryRepository;
 
-    public InventoryService(LabRepository labRepository, EquipmentRepository equipmentRepository) {
+    public InventoryService(LabRepository labRepository, EquipmentRepository equipmentRepository,
+                            DepartmentRepository departmentRepository, EquipmentCategoryRepository categoryRepository) {
         this.labRepository = labRepository;
         this.equipmentRepository = equipmentRepository;
+        this.departmentRepository = departmentRepository;
+        this.categoryRepository = categoryRepository;
+    }
+
+    // ---- lookups for form dropdowns ----
+
+    public List<Department> allDepartments() {
+        return departmentRepository.findAllByOrderByNameAsc();
+    }
+
+    /** The department with this id, or null when id is null (the "none" choice in a dropdown). */
+    public Department getDepartment(Long id) {
+        return id == null ? null : departmentRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Department not found"));
+    }
+
+    public List<EquipmentCategory> allCategories() {
+        return categoryRepository.findAllByOrderByNameAsc();
+    }
+
+    /** The category with this id, or null when id is null. */
+    public EquipmentCategory getCategory(Long id) {
+        return id == null ? null : categoryRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Category not found"));
     }
 
     // ---- labs ----
@@ -69,7 +100,7 @@ public class InventoryService {
             equipmentRepository.deleteById(id);
             equipmentRepository.flush();
         } catch (DataIntegrityViolationException e) {
-            throw new IllegalStateException("This equipment has reservations. Set its status to RETIRED instead.");
+            throw new IllegalStateException("This equipment has reservations or maintenance records. Set its status to RETIRED instead.");
         }
     }
 }

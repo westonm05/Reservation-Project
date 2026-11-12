@@ -4,15 +4,18 @@ import edu.campbellsville.lablink.model.Equipment;
 import edu.campbellsville.lablink.model.EquipmentStatus;
 import edu.campbellsville.lablink.model.Lab;
 import edu.campbellsville.lablink.model.Reservation;
+import edu.campbellsville.lablink.model.ReservationStatusChange;
 import edu.campbellsville.lablink.model.ReservationStatus;
 import edu.campbellsville.lablink.model.Role;
 import edu.campbellsville.lablink.model.User;
 import edu.campbellsville.lablink.repository.EquipmentRepository;
 import edu.campbellsville.lablink.repository.LabRepository;
 import edu.campbellsville.lablink.repository.ReservationRepository;
+import edu.campbellsville.lablink.repository.ReservationStatusChangeRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -23,6 +26,8 @@ import java.util.List;
  *  - faculty and lab managers are approved automatically; students wait for a lab manager
  *  - only the owner can cancel or reschedule, only a lab manager can approve/reject
  *  - only pending reservations can be rescheduled
+ *  - equipment can't be reserved for longer than its category's loan limit
+ *  - every status change is recorded in reservation_status_history (who, when, from, to)
  */
 @Service
 public class ReservationService {
@@ -30,13 +35,16 @@ public class ReservationService {
     private final ReservationRepository reservationRepository;
     private final LabRepository labRepository;
     private final EquipmentRepository equipmentRepository;
+    private final ReservationStatusChangeRepository historyRepository;
 
     public ReservationService(ReservationRepository reservationRepository,
                               LabRepository labRepository,
-                              EquipmentRepository equipmentRepository) {
+                              EquipmentRepository equipmentRepository,
+                              ReservationStatusChangeRepository historyRepository) {
         this.reservationRepository = reservationRepository;
         this.labRepository = labRepository;
         this.equipmentRepository = equipmentRepository;
+        this.historyRepository = historyRepository;
     }
 
     @Transactional
@@ -51,7 +59,7 @@ public class ReservationService {
                 lab, ReservationStatus.ACTIVE, end, start));
         Reservation reservation = newReservation(requester, start, end, purpose);
         reservation.setLab(lab);
-        return reservationRepository.save(reservation);
+        return saveNew(reservation);
     }
 
     @Transactional
@@ -62,11 +70,12 @@ public class ReservationService {
             throw new ReservationException(equipment.getName() + " is not available (" + equipment.getStatus() + ")");
         }
         validateTimes(start, end);
+        checkLoanLimit(equipment, start, end);
         rejectIfBooked(equipment.getName(), reservationRepository.existsByEquipmentAndStatusInAndStartTimeBeforeAndEndTimeAfter(
                 equipment, ReservationStatus.ACTIVE, end, start));
         Reservation reservation = newReservation(requester, start, end, purpose);
         reservation.setEquipment(equipment);
-        return reservationRepository.save(reservation);
+        return saveNew(reservation);
     }
 
     @Transactional
@@ -86,7 +95,7 @@ public class ReservationService {
         if (!ReservationStatus.ACTIVE.contains(reservation.getStatus())) {
             throw new ReservationException("Only pending or approved reservations can be cancelled");
         }
-        reservation.setStatus(ReservationStatus.CANCELLED);
+        changeStatus(reservation, ReservationStatus.CANCELLED, requester, "Cancelled by requester");
     }
 
     /** Moves a PENDING reservation to a new time window (backlog item 3.3). */
@@ -98,6 +107,9 @@ public class ReservationService {
             throw new ReservationException("Only pending reservations can be rescheduled");
         }
         validateTimes(newStart, newEnd);
+        if (reservation.getEquipment() != null) {
+            checkLoanLimit(reservation.getEquipment(), newStart, newEnd);
+        }
         rejectIfBooked(reservation.getResourceName(), overlapsOtherBookings(reservation, newStart, newEnd));
         reservation.setStartTime(newStart);
         reservation.setEndTime(newEnd);
@@ -157,10 +169,39 @@ public class ReservationService {
         if (reservation.getStatus() != ReservationStatus.PENDING) {
             throw new ReservationException("This reservation has already been reviewed");
         }
-        reservation.setStatus(decision);
+        changeStatus(reservation, decision, manager,
+                decision == ReservationStatus.APPROVED ? "Approved by lab manager" : "Rejected by lab manager");
         reservation.setReviewedBy(manager);
         reservation.setReviewedAt(LocalDateTime.now());
         // No save() call needed: inside a @Transactional method, JPA writes changes automatically.
+    }
+
+    /** Saves a new reservation and writes the first row of its history. */
+    private Reservation saveNew(Reservation reservation) {
+        Reservation saved = reservationRepository.save(reservation);
+        String note = saved.getStatus() == ReservationStatus.APPROVED
+                ? "Submitted and approved automatically" : "Submitted for approval";
+        historyRepository.save(new ReservationStatusChange(saved, null, saved.getStatus(), saved.getUser(), note));
+        return saved;
+    }
+
+    /** Sets the new status and records the change in reservation_status_history. */
+    private void changeStatus(Reservation reservation, ReservationStatus newStatus, User changedBy, String note) {
+        ReservationStatus oldStatus = reservation.getStatus();
+        reservation.setStatus(newStatus);
+        historyRepository.save(new ReservationStatusChange(reservation, oldStatus, newStatus, changedBy, note));
+    }
+
+    /** Rejects equipment reservations longer than the item's category allows (no category = no limit). */
+    private void checkLoanLimit(Equipment equipment, LocalDateTime start, LocalDateTime end) {
+        if (equipment.getCategory() == null) {
+            return;
+        }
+        int maxHours = equipment.getCategory().getMaxLoanHours();
+        if (Duration.between(start, end).compareTo(Duration.ofHours(maxHours)) > 0) {
+            throw new ReservationException(equipment.getCategory().getName()
+                    + " items can be reserved for at most " + maxHours + " hours at a time");
+        }
     }
 
     private void validateTimes(LocalDateTime start, LocalDateTime end) {
