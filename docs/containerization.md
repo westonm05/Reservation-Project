@@ -48,16 +48,16 @@ local secrets can never be copied into an image.
 ## 2. docker-compose.yml: app + MySQL
 
 ```
-          your browser
-               │  http://localhost:8080
-┌──────────────┼──────────────────────────── docker compose ─┐
-│        ┌─────▼─────┐   JDBC (db:3306)   ┌───────────────┐  │
-│        │    app    │ ─────────────────▶ │      db       │  │
-│        │  LabLink  │                    │   MySQL 8.4   │  │
-│        │   :8080   │                    │ no host port  │  │
-│        └───────────┘                    └──────┬────────┘  │
-│                                         volume: db-data    │
-└────────────────────────────────────────────────────────────┘
+                your browser
+                     │  http://localhost:8080
+                     │  ── inside docker compose (one private network) ──
+              ┌──────▼──────┐   JDBC db:3306   ┌───────────────┐
+              │     app     │ ───────────────▶ │      db       │
+              │   LabLink   │                  │   MySQL 8.4   │
+              │    :8080    │                  │ no host port  │
+              └─────────────┘                  └───────┬───────┘
+                                                       │
+                                               volume: db-data
 ```
 
 | Setting | Why |

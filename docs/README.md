@@ -14,5 +14,6 @@
 | Week 14: deployment guide | [deployment.md](deployment.md) |
 | Week 14: monitoring and logging strategy | [monitoring.md](monitoring.md) |
 | Week 14: maintenance classification | [maintenance.md](maintenance.md) |
+| Week 14: all of the above as one PDF | [LabLink_Week14_Deployment_Operations.pdf](LabLink_Week14_Deployment_Operations.pdf) |
 
 Diagrams are written in Mermaid (render directly on GitHub); the component diagram is Graphviz (`diagrams/component.dot`). All deliverables combined: [LabLink_Milestone2_Design.pdf](LabLink_Milestone2_Design.pdf).

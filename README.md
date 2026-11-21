@@ -43,20 +43,20 @@ LabLink is a single Spring Boot application (a modular monolith, [ADR-0001](docs
 organized into layers. Each layer only calls the one below it.
 
 ```
- Browser ──HTML──▶ ┌──────────────────────────────────────────────────────┐
-                   │  Security filter chain (Spring Security: login, roles)│
- Campus systems ─▶ ├──────────────────────────────────────────────────────┤
-   (JSON API)      │  web/  controllers + Thymeleaf templates   api/ REST │  Presentation
-                   ├──────────────────────────────────────────────────────┤
-                   │  service/  business rules (reservations, inventory,  │  Business
-                   │            users, availability)                       │
-                   ├──────────────────────────────────────────────────────┤
-                   │  repository/  Spring Data JPA                        │  Persistence
-                   ├──────────────────────────────────────────────────────┤
-                   │  model/  JPA entities                                │  Domain
-                   └───────────────────────────┬──────────────────────────┘
-                                               │ JDBC (Flyway migrations at startup)
-                                   H2 (development, tests) / MySQL 8.4 (production)
+ Browser ──HTML──▶ ┌────────────────────────────────────────────────────────┐
+                   │ Security filter chain (Spring Security: login, roles)  │
+ Campus systems ─▶ ├────────────────────────────────────────────────────────┤
+   (JSON API)      │ web/  controllers + Thymeleaf      api/  REST JSON     │  Presentation
+                   ├────────────────────────────────────────────────────────┤
+                   │ service/  business rules: reservations, inventory,     │  Business
+                   │           users, availability                          │
+                   ├────────────────────────────────────────────────────────┤
+                   │ repository/  Spring Data JPA                           │  Persistence
+                   ├────────────────────────────────────────────────────────┤
+                   │ model/  JPA entities                                   │  Domain
+                   └────────────────────────────┬───────────────────────────┘
+                                                │ JDBC (Flyway runs migrations at startup)
+                      H2 (development, tests) / MySQL 8.4 (production)
 ```
 
 - **Server-side rendering** with Thymeleaf and session-based login ([ADR-0002](docs/adr/0002-server-side-rendering-and-session-auth.md)).

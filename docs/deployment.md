@@ -8,19 +8,19 @@ For how the image itself is built, see [containerization.md](containerization.md
 One Linux server running Docker, with three containers managed by Docker Compose:
 
 ```
-                    Internet
-                       │ HTTPS :443  (HTTP :80 redirects to HTTPS)
-┌──────────────────────┼─────────────── Linux server (Ubuntu 24.04 LTS) ─┐
-│               ┌──────▼──────┐                                         │
-│               │    caddy    │  reverse proxy, automatic TLS certificate│
-│               └──────┬──────┘                                         │
-│                      │ http://app:8080   (private Docker network)      │
-│               ┌──────▼──────┐        ┌──────────────┐                 │
-│               │     app     │──JDBC─▶│      db      │                 │
-│               │   LabLink   │        │  MySQL 8.4   │──▶ volume       │
-│               └─────────────┘        └──────────────┘    db-data      │
-│  firewall: only 22, 80, 443 open    nightly deploy/backup.sh ─▶ backups/ │
-└────────────────────────────────────────────────────────────────────────┘
+                       Internet
+                           │  HTTPS :443  (HTTP :80 redirects to HTTPS)
+                           │  ── Linux server (Ubuntu 24.04 LTS), firewall: 22, 80, 443 only ──
+                    ┌──────▼──────┐
+                    │    caddy    │  reverse proxy + automatic TLS certificate
+                    └──────┬──────┘
+                           │  http://app:8080  (private Docker network)
+                    ┌──────▼──────┐          ┌─────────────┐
+                    │     app     │── JDBC ─▶│     db      │──▶ volume db-data
+                    │   LabLink   │          │  MySQL 8.4  │
+                    └─────────────┘          └─────────────┘
+
+ nightly cron: deploy/backup.sh ──▶ backups/ ──▶ copy to off-server storage
 ```
 
 This fits LabLink's scale (one campus, a few hundred users) and its architecture (a single deployable
