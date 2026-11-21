@@ -115,6 +115,7 @@ Defined in [`.github/workflows/ci.yml`](../.github/workflows/ci.yml). It runs on
 |---|---|---|
 | **Lint** | `mvn checkstyle:check` against [`config/checkstyle/checkstyle.xml`](../config/checkstyle/checkstyle.xml): unused/star imports, naming conventions, missing braces, empty catch blocks, `equals` without `hashCode`, tabs, lines over 140 chars | Any violation |
 | **Build & Test** | `mvn verify`: compile → all unit tests (Mockito) and integration tests (Spring Boot + H2) → package the `.jar` → JaCoCo coverage check. Uploads the coverage report, test results, and `.jar` as downloadable artifacts | Compile error, any failing test, or service-layer line coverage below 70% |
+| **Docker Smoke Test** (added Week 14) | `docker compose up --build --wait` with MySQL 8.4, then checks `/actuator/health`, `/login` and `/api/labs` respond; prints container logs | Image fails to build, a container never becomes healthy, or any check fails |
 
 Results are reported on the pull request three ways: the pass/fail check next to each commit, inline annotations on the
 changed lines, and a summary table (tests run/failed, lint violations, coverage by package) on the run's summary page.
@@ -124,7 +125,8 @@ changed lines, and a summary table (tests run/failed, lint violations, coverage 
 Every push to `main` produces a tested, runnable `lablink-<version>.jar` as a CI artifact, so `main` is always releasable.
 At each milestone we tag the `main` commit (`git tag v0.3.0 && git push --tags`) and deploy that tagged build to the cloud host
 with the MySQL profile (`SPRING_PROFILES_ACTIVE=mysql`, database credentials from environment variables, never from the repo).
-Hosting is planned for Milestone 3 per the [project plan](project-plan.md); until then "production" is the tagged release artifact.
+Since Week 14 the release is deployed as a Docker image built from the tag; the full procedure (server, HTTPS, backups,
+release and rollback) is in the [deployment guide](deployment.md).
 
 ## 7. Workflow diagram
 
