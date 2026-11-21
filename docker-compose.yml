@@ -14,6 +14,7 @@ services:
       MYSQL_USER: ${DB_USERNAME:-lablink}
       MYSQL_PASSWORD: ${DB_PASSWORD:-lablink-local-only}
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root-local-only}
+      TZ: ${TZ:-America/New_York}
     volumes:
       - db-data:/var/lib/mysql
     healthcheck:
@@ -35,6 +36,7 @@ services:
       # "mysql,seed" loads the demo accounts for local runs and demos.
       # Production uses just "mysql" (see docs/deployment.md).
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-mysql,seed}
+      TZ: ${TZ:-America/New_York}   # reservation rules use local time; see Dockerfile
       DB_URL: jdbc:mysql://db:3306/lablink?allowPublicKeyRetrieval=true&useSSL=false
       DB_USERNAME: ${DB_USERNAME:-lablink}
       DB_PASSWORD: ${DB_PASSWORD:-lablink-local-only}

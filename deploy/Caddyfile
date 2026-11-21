@@ -1,0 +1,23 @@
+# Reverse proxy in front of LabLink. Caddy gets and renews the HTTPS certificate by itself.
+{$LABLINK_DOMAIN} {
+	encode gzip
+
+	# Actuator metrics stay internal; only the health check is reachable from outside.
+	@internal path /actuator/*
+	@health path /actuator/health /actuator/health/*
+	handle @health {
+		reverse_proxy app:8080
+	}
+	handle @internal {
+		respond 404
+	}
+
+	handle {
+		reverse_proxy app:8080
+	}
+
+	log {
+		output stdout
+		format json
+	}
+}

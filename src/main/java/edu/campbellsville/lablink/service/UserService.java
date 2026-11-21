@@ -3,6 +3,8 @@ package edu.campbellsville.lablink.service;
 import edu.campbellsville.lablink.model.Role;
 import edu.campbellsville.lablink.model.User;
 import edu.campbellsville.lablink.repository.UserRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -12,6 +14,8 @@ import java.util.List;
 /** Business logic for accounts. Controllers call services; services call repositories. */
 @Service
 public class UserService {
+
+    private static final Logger LOG = LoggerFactory.getLogger(UserService.class);
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -39,7 +43,9 @@ public class UserService {
             throw new IllegalArgumentException("An account with that email already exists");
         }
         User user = new User(normalizedEmail, fullName.trim(), passwordEncoder.encode(rawPassword), role);
-        return userRepository.save(user);
+        User saved = userRepository.save(user);
+        LOG.info("user.created id={} role={}", saved.getId(), role);
+        return saved;
     }
 
     /** Every account, sorted by name, for the admin page. */
@@ -58,7 +64,9 @@ public class UserService {
         if (user.getEmail().equalsIgnoreCase(actingEmail)) {
             throw new IllegalArgumentException("You can't change your own role");
         }
+        Role oldRole = user.getRole();
         user.setRole(newRole);
+        LOG.info("user.role.changed id={} from={} to={}", user.getId(), oldRole, newRole);
         return userRepository.save(user);
     }
 

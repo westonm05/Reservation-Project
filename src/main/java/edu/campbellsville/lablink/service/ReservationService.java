@@ -186,7 +186,7 @@ public class ReservationService {
         String note = saved.getStatus() == ReservationStatus.APPROVED
                 ? "Submitted and approved automatically" : "Submitted for approval";
         historyRepository.save(new ReservationStatusChange(saved, null, saved.getStatus(), saved.getUser(), note));
-        LOG.info("reservation.created id={} user={} status={}", saved.getId(), saved.getUser().getId(), saved.getStatus());
+        LOG.info("reservation.created id={} user={} status={}", saved.getId(), idOf(saved.getUser()), saved.getStatus());
         return saved;
     }
 
@@ -195,7 +195,12 @@ public class ReservationService {
         ReservationStatus oldStatus = reservation.getStatus();
         reservation.setStatus(newStatus);
         historyRepository.save(new ReservationStatusChange(reservation, oldStatus, newStatus, changedBy, note));
-        LOG.info("reservation.status id={} from={} to={} by={}", reservation.getId(), oldStatus, newStatus, changedBy.getId());
+        LOG.info("reservation.status id={} from={} to={} by={}", reservation.getId(), oldStatus, newStatus, idOf(changedBy));
+    }
+
+    /** User id for log lines; never the name or email. */
+    private static Long idOf(User user) {
+        return user == null ? null : user.getId();
     }
 
     /** Rejects equipment reservations longer than the item's category allows (no category = no limit). */

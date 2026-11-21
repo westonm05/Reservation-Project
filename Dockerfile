@@ -31,8 +31,11 @@ COPY --from=build /workspace/target/lablink-*.jar app.jar
 USER lablink
 
 # Defaults; override with -e or in docker-compose.yml.
+# TZ: the app compares reservation times with LocalDateTime.now(), so the container must use
+# campus time. Containers default to UTC, which would put "now" five hours ahead in Kentucky.
 # MaxRAMPercentage lets the JVM size its heap from the container's memory limit.
-ENV SPRING_PROFILES_ACTIVE=mysql \
+ENV TZ=America/New_York \
+    SPRING_PROFILES_ACTIVE=mysql \
     JAVA_OPTS="-XX:MaxRAMPercentage=75 -XX:+ExitOnOutOfMemoryError"
 
 EXPOSE 8080
@@ -42,4 +45,4 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=90s --retries=3 \
     CMD curl -fsS http://localhost:8080/actuator/health/liveness || exit 1
 
 # "exec" makes Java process 1, so it receives Docker's stop signal and shuts down gracefully.
-ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar /app/app.jar"]
+ENTRYPOINT ["sh", "-c", "exec java -Duser.timezone=$TZ $JAVA_OPTS -jar /app/app.jar"]
