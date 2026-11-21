@@ -12,6 +12,8 @@ import edu.campbellsville.lablink.repository.EquipmentRepository;
 import edu.campbellsville.lablink.repository.LabRepository;
 import edu.campbellsville.lablink.repository.ReservationRepository;
 import edu.campbellsville.lablink.repository.ReservationStatusChangeRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,6 +33,8 @@ import java.util.List;
  */
 @Service
 public class ReservationService {
+
+    private static final Logger LOG = LoggerFactory.getLogger(ReservationService.class);
 
     private final ReservationRepository reservationRepository;
     private final LabRepository labRepository;
@@ -182,6 +186,7 @@ public class ReservationService {
         String note = saved.getStatus() == ReservationStatus.APPROVED
                 ? "Submitted and approved automatically" : "Submitted for approval";
         historyRepository.save(new ReservationStatusChange(saved, null, saved.getStatus(), saved.getUser(), note));
+        LOG.info("reservation.created id={} user={} status={}", saved.getId(), saved.getUser().getId(), saved.getStatus());
         return saved;
     }
 
@@ -190,6 +195,7 @@ public class ReservationService {
         ReservationStatus oldStatus = reservation.getStatus();
         reservation.setStatus(newStatus);
         historyRepository.save(new ReservationStatusChange(reservation, oldStatus, newStatus, changedBy, note));
+        LOG.info("reservation.status id={} from={} to={} by={}", reservation.getId(), oldStatus, newStatus, changedBy.getId());
     }
 
     /** Rejects equipment reservations longer than the item's category allows (no category = no limit). */

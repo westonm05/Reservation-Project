@@ -55,6 +55,13 @@
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
 
+        <!-- Actuator: /actuator/health for the Docker and load-balancer health checks, plus
+             /actuator/metrics (request counts, response times, JVM memory, DB pool) for monitoring. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
         <!-- Flyway runs the numbered migration scripts in src/main/resources/db/migration at
              startup, so any empty database (H2 or MySQL) is built to the current schema. -->
         <dependency>
