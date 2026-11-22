@@ -16,9 +16,9 @@ Last updated: November 11, 2026 (Milestone 3)
 | Milestone | Focus | Due | Status |
 |---|---|---|---|
 | 1 | Proposal, project charter, repository setup | Sept 2026 | ✅ Complete |
-| 2 | Design & architecture + working prototype | Oct 18, 2026 | ✅ Complete (this submission) |
+| 2 | Design & architecture + working prototype | Oct 18, 2026 | ✅ Complete |
 | 3 | Core features complete, MySQL integration, API/advanced feature | Nov 15, 2026 | ✅ Complete — see [sprint3-progress.md](sprint3-progress.md) |
-| 4 | Polish, testing, deployment, final demo | Target: early Dec 2026 | ⏳ Not started |
+| 4 | Polish, testing, deployment, final demo | Dec 6, 2026 (Week 15 deliverables) | 🚧 In progress — containerization and deployment docs done (Week 14); system tests, final docs and v1.0.0 release done (Week 15); final presentation to come |
 
 (Milestone 3 and 4 dates are targets; adjust to the syllabus dates.)
 

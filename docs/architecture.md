@@ -1,6 +1,6 @@
 # LabLink Architecture Document
 
-CS450 Software Engineering, Milestone 2 — Design & Architecture
+CS450 Software Engineering · originally written for Milestone 2, **updated for the v1.0.0 release (Week 15)**
 Team: Weston Mattingly, Isaiah Bain, Dawson Brown, PJ
 
 ## 1. System overview
@@ -11,9 +11,10 @@ LabLink is a web application that lets students and faculty reserve lab rooms an
 
 | Actor | Can do |
 |---|---|
-| Student | Register, log in, browse labs and equipment, request reservations (need approval), view and cancel own reservations |
-| Faculty | Everything a student can; reservations are approved automatically |
-| Lab Manager | Everything above, plus create/edit/delete labs and equipment and approve or reject pending requests |
+| Student | Register, log in, search labs and equipment, view lab availability, request reservations (need approval), reschedule pending requests, cancel own reservations, change password |
+| Faculty | Everything a student can; reservations are approved automatically. Accounts are created by a lab manager |
+| Lab Manager | Everything above, plus create/edit/delete labs and equipment, approve or reject pending requests, create faculty/lab-manager accounts and change roles |
+| Campus system | Reads lab lists and availability from the public JSON API (no login) |
 
 **Core business rules**
 
@@ -21,7 +22,9 @@ LabLink is a web application that lets students and faculty reserve lab rooms an
 2. A reservation must start in the future and end after it starts.
 3. A lab or piece of equipment cannot be double-booked: a new request is refused if it overlaps any PENDING or APPROVED reservation for the same resource.
 4. Inactive labs and equipment that is in MAINTENANCE or RETIRED cannot be reserved.
-5. Only the person who made a reservation can cancel it; only a lab manager can approve or reject it.
+5. Only the person who made a reservation can reschedule (while PENDING) or cancel it; only a lab manager can approve or reject it.
+6. An equipment reservation can't be longer than its category's maximum loan length.
+7. Every status change is recorded with who made it and when (`reservation_status_changes`).
 
 ## 2. Architectural pattern: Layered architecture with MVC
 
@@ -67,16 +70,19 @@ Source: [`diagrams/component.dot`](diagrams/component.dot) (Graphviz). Every con
 
 | Controller | Services it uses |
 |---|---|
-| AuthController | UserService |
+| AuthController, AccountController, AdminController | UserService |
 | HomeController | UserService, ReservationService |
 | LabController, EquipmentController | InventoryService |
+| AvailabilityController | AvailabilityService |
 | ReservationController | ReservationService, InventoryService, UserService |
+| AvailabilityApiController (REST) | AvailabilityService, InventoryService |
 
 | Service | Repositories it uses |
 |---|---|
 | UserService | UserRepository (also used by LabLinkUserDetailsService at login) |
-| InventoryService | LabRepository, EquipmentRepository |
-| ReservationService | ReservationRepository, LabRepository, EquipmentRepository |
+| InventoryService | LabRepository, EquipmentRepository, DepartmentRepository, EquipmentCategoryRepository |
+| ReservationService | ReservationRepository, LabRepository, EquipmentRepository, ReservationStatusChangeRepository |
+| AvailabilityService | LabRepository, ReservationRepository |
 
 **How a request flows:** the browser sends a request → the security filter chain checks that the user is logged in and has the right role → a controller validates the form and calls a service → the service applies the business rules and uses repositories to read/write data inside a transaction → the controller picks a Thymeleaf template, which renders HTML back to the browser.
 
@@ -92,13 +98,15 @@ Source: [`diagrams/component.dot`](diagrams/component.dot) (Graphviz). Every con
 | Persistence | Spring Data JPA / Hibernate | (via Boot) | Repositories generate queries from method names |
 | Validation | Jakarta Bean Validation | (via Boot) | `@NotBlank`, `@Email`, etc. on forms |
 | Database (dev/test) | H2, in memory, MySQL mode | 2.x | Zero install; fresh data on every run |
-| Database (production) | MySQL | 8.x | Free, widely hosted, supports CHECK constraints |
+| Database (production) | MySQL | 8.4 | Free, widely hosted, supports CHECK constraints |
 | Schema management | Flyway migrations (`db/migration`) | — | Versioned, repeatable schema setup; Hibernate validates against it (ADR-0005) |
 | Build | Maven | 3.9 | Standard for Spring; dependency management |
 | Testing | JUnit 5, Spring Boot Test, MockMvc, AssertJ | (via Boot) | Service tests against H2; full HTTP tests through security |
-| CI | GitHub Actions | — | Builds and runs all tests on every push and pull request |
+| Code quality | Checkstyle, JaCoCo, SonarQube (Week 12) | — | Lint on every PR; coverage gate on the service layer |
+| CI | GitHub Actions | — | Lint, build + all tests, Docker smoke test on every push and pull request |
+| Containers | Docker, Docker Compose, Caddy | — | Same image locally and in production; Caddy terminates HTTPS |
 | Version control | Git + GitHub, feature-branch workflow | — | Reviewed pull requests into `main` |
-| Hosting (final demo) | Cloud host running the JAR + managed MySQL | TBD in Milestone 3 | — |
+| Hosting | Linux server with Docker: app container + MySQL container behind Caddy | — | See §7 and [deployment.md](deployment.md) |
 
 ## 5. Security design
 
@@ -108,14 +116,41 @@ Source: [`diagrams/component.dot`](diagrams/component.dot) (Graphviz). Every con
 - All state-changing actions are HTTP POST requests protected by Spring Security's CSRF token, which Thymeleaf adds to every form automatically.
 - Database credentials for production come from environment variables, not from the repository.
 
-## 6. Prototype scope (Milestone 2)
+## 6. Implementation status (v1.0.0)
 
-The prototype in the repository demonstrates every layer end to end:
+Everything planned for the course is implemented and covered by automated tests:
 
-- Registration, login and logout with three roles
-- CRUD for labs and equipment (lab manager)
-- Reservation requests with double-booking prevention, faculty auto-approval, manager approve/reject, and owner cancellation
-- DDL-driven schema on H2 with demo data
-- 18 automated tests (business rules and HTTP/security) run by GitHub Actions
+| Requirement | Where |
+|---|---|
+| Front end | Thymeleaf pages, responsive layout (backlog 3.7) |
+| Database | 8 entities, Flyway migrations V1–V4, seed data ([database-design.md](database-design.md)) |
+| Authentication | Spring Security form login, BCrypt, three roles, admin account management |
+| CRUD on 2+ entities | Labs, equipment, reservations, users |
+| Advanced feature | Public REST availability API ([api.md](api.md)) and lab availability week view |
 
-Planned for later milestones: production MySQL deployment, reservation calendar view, email notifications or a public availability API (advanced feature / API integration requirement), and UI polish.
+The Milestone 2 prototype had 18 tests; v1.0.0 has **176** (unit, integration and 13 end-to-end system
+tests), with 85.9 % line coverage. See [system-test-report.md](system-test-report.md).
+
+Not in v1.0.0 (see the release notes): email notifications, self-service password reset, recurring reservations.
+
+## 7. Deployment view
+
+```
+ Internet ──443──▶ Caddy (HTTPS, Let's Encrypt) ──8080──▶ lablink app container (Spring Boot JAR, Java 17)
+                    blocks /actuator/* except health          │ JDBC (private Docker network)
+                                                               ▼
+                                                     MySQL 8.4 container ── db-data volume, nightly backup.sh
+```
+
+The same Docker image runs locally (`docker compose up`), in CI (smoke test) and in production
+(`docker-compose.prod.yml`). Configuration comes only from environment variables. Details:
+[containerization.md](containerization.md), [deployment.md](deployment.md), [monitoring.md](monitoring.md).
+
+## 8. Testing strategy
+
+| Level | What | Tools |
+|---|---|---|
+| Unit | Business rules in services (conflicts, approval, loan limits, reschedule) | JUnit 5, Mockito |
+| Integration | Controllers through security to H2; repositories and migrations | Spring Boot Test, MockMvc |
+| System (end-to-end) | 13 user workflows against the running app over HTTP | `EndToEndSystemTest` (real port, real login) |
+| Smoke | Built Docker image + MySQL: health, login page, API | GitHub Actions + Docker Compose |

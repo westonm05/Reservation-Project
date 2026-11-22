@@ -6,6 +6,8 @@ digraph LabLink {
   edge  [color="#444444", fontname="Helvetica", fontsize=10, arrowsize=0.8];
 
   browser [shape=box, style="rounded,filled", fillcolor="#ffffff", label="Web browser\n(Student · Faculty · Lab Manager)"];
+  campus [shape=box, style="rounded,filled", fillcolor="#ffffff", label="Campus systems\n(JSON clients, no login)"];
+  caddy [shape=box, style="rounded,filled", fillcolor="#ffffff", label="Caddy reverse proxy\n(HTTPS, production)"];
   db [shape=cylinder, fillcolor="#fff7e6", color="#a15c07", label="Relational database\nH2 (dev/test) · MySQL 8 (prod)"];
 
   subgraph cluster_app {
@@ -15,14 +17,16 @@ digraph LabLink {
 
     subgraph cluster_pres {
       label="Presentation layer (Spring MVC controllers + Thymeleaf views)"; style="rounded,filled"; fillcolor="#f7f9fd"; color="#3b5ba5";
-      authC [label="AuthController"]; homeC [label="HomeController"]; labC [label="LabController"];
-      eqC [label="EquipmentController"]; resC [label="ReservationController"];
+      authC [label="AuthController"]; homeC [label="HomeController"]; acctC [label="AccountController"];
+      labC [label="LabController"]; eqC [label="EquipmentController"]; availC [label="AvailabilityController"];
+      resC [label="ReservationController"]; adminC [label="AdminController"];
+      apiC [fillcolor="#e9f3ff", label="AvailabilityApiController\n(REST, JSON)"];
       views [shape=note, fillcolor="#ffffff", label="Thymeleaf\ntemplates"];
     }
     subgraph cluster_bus {
       label="Business layer (services)"; style="rounded,filled"; fillcolor="#f3faf5"; color="#1d7a46";
       node [fillcolor="#e7f5ec", color="#1d7a46"];
-      userS [label="UserService"]; invS [label="InventoryService"];
+      userS [label="UserService"]; invS [label="InventoryService"]; availS [label="AvailabilityService"];
       resS [label="ReservationService\n(conflict check, approval rules)"];
     }
     subgraph cluster_per {
@@ -30,20 +34,23 @@ digraph LabLink {
       node [fillcolor="#fff4e0", color="#a15c07"];
       userR [label="UserRepository"]; labR [label="LabRepository"];
       eqR [label="EquipmentRepository"]; resR [label="ReservationRepository"];
+      histR [label="ReservationStatusChange-\nRepository"]; refR [label="Department / EquipmentCategory\nRepositories"];
     }
   }
 
-  browser -> security [label=" HTTP requests /\n HTML pages"];
+  browser -> caddy [label=" HTTPS"]; campus -> caddy [label=" GET /api/**"];
+  caddy -> security [label=" HTTP"];
   security -> resC [lhead=cluster_pres, label=" authorized\n requests"];
   security -> userR [style=dashed, label=" loads user\n at login", constraint=false];
 
-  authC -> userS; homeC -> userS; homeC -> resS;
-  labC -> invS; eqC -> invS;
+  authC -> userS; acctC -> userS; adminC -> userS; homeC -> userS; homeC -> resS;
+  labC -> invS; eqC -> invS; availC -> availS; apiC -> availS; apiC -> invS;
   resC -> resS; resC -> invS; resC -> userS;
   // every controller renders a Thymeleaf template (not drawn, to keep the diagram readable)
 
-  userS -> userR; invS -> labR; invS -> eqR;
-  resS -> resR; resS -> labR; resS -> eqR;
+  userS -> userR; invS -> labR; invS -> eqR; invS -> refR;
+  resS -> resR; resS -> labR; resS -> eqR; resS -> histR;
+  availS -> labR; availS -> resR;
 
-  labR -> db [ltail=cluster_per, label=" JDBC / SQL"];
+  labR -> db [ltail=cluster_per, label=" JDBC / SQL\n (Flyway migrates at startup)"];
 }
