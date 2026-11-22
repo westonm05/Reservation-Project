@@ -322,7 +322,8 @@ class EndToEndSystemTest {
     }
 
     private Long createLab(String name) throws Exception {
-        Page saved = loggedIn(MANAGER, "manager123").submit("/labs/new", "/labs/save", labForm(name, "Test Hall", "T" + LAB_ROOMS.incrementAndGet(), "20"));
+        Map<String, String> form = labForm(name, "Test Hall", "T" + LAB_ROOMS.incrementAndGet(), "20");
+        Page saved = loggedIn(MANAGER, "manager123").submit("/labs/new", "/labs/save", form);
         assertThat(saved.body()).contains("Lab saved.");
         return labId(name);
     }
