@@ -36,6 +36,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.StringJoiner;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -67,6 +68,8 @@ class EndToEndSystemTest {
     private static final String STUDENT = "student@lablink.edu";
     private static final String FACULTY = "faculty@lablink.edu";
     private static final String MANAGER = "manager@lablink.edu";
+    /** Building + room number must be unique, so every lab the tests create gets its own room. */
+    private static final AtomicInteger LAB_ROOMS = new AtomicInteger();
 
     @LocalServerPort int port;
     @Autowired LabRepository labRepository;
@@ -108,7 +111,7 @@ class EndToEndSystemTest {
     @DisplayName("E2E-03 Lab manager adds a lab, finds it by search, edits it and deletes it")
     void managerManagesLabs() throws Exception {
         Browser manager = loggedIn(MANAGER, "manager123");
-        Page saved = manager.submit("/labs/new", "/labs/save", labForm("E2E Chemistry Annex", "Annex Hall", "12"));
+        Page saved = manager.submit("/labs/new", "/labs/save", labForm("E2E Chemistry Annex", "Annex Hall", "A1", "12"));
         assertThat(saved.path()).isEqualTo("/labs");
         assertThat(saved.body()).contains("Lab saved.");
 
@@ -116,7 +119,7 @@ class EndToEndSystemTest {
         assertThat(search.body()).contains("E2E Chemistry Annex");
 
         Long id = labId("E2E Chemistry Annex");
-        Map<String, String> edit = labForm("E2E Chemistry Annex", "Annex Hall", "40");
+        Map<String, String> edit = labForm("E2E Chemistry Annex", "Annex Hall", "A1", "40");
         edit.put("id", id.toString());
         manager.submit("/labs/" + id + "/edit", "/labs/save", edit);
         assertThat(labRepository.findById(id).orElseThrow().getCapacity()).isEqualTo(40);
@@ -319,16 +322,16 @@ class EndToEndSystemTest {
     }
 
     private Long createLab(String name) throws Exception {
-        Page saved = loggedIn(MANAGER, "manager123").submit("/labs/new", "/labs/save", labForm(name, "Test Hall", "20"));
+        Page saved = loggedIn(MANAGER, "manager123").submit("/labs/new", "/labs/save", labForm(name, "Test Hall", "T" + LAB_ROOMS.incrementAndGet(), "20"));
         assertThat(saved.body()).contains("Lab saved.");
         return labId(name);
     }
 
-    private static Map<String, String> labForm(String name, String building, String capacity) {
+    private static Map<String, String> labForm(String name, String building, String room, String capacity) {
         Map<String, String> form = new LinkedHashMap<>();
         form.put("name", name);
         form.put("building", building);
-        form.put("roomNumber", "E2E");
+        form.put("roomNumber", room);
         form.put("capacity", capacity);
         form.put("description", "Created by the end-to-end tests");
         form.put("active", "true");
