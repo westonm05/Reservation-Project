@@ -11,6 +11,8 @@ a lab door that lists today's bookings.
 
 Code: [`AvailabilityApiController`](../src/main/java/edu/campbellsville/lablink/api/AvailabilityApiController.java),
 which reuses `AvailabilityService` (the same service behind the lab availability page).
+Verified end to end, over HTTP and without logging in, by scenarios E2E-09 and E2E-13 in the
+[system test report](system-test-report.md).
 
 ## `GET /api/labs`
 

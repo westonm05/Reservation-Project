@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/westonm05/Reservation-Project/actions/workflows/ci.yml/badge.svg)](https://github.com/westonm05/Reservation-Project/actions/workflows/ci.yml)
 
-CS450 Software Engineering, Campbellsville University
+CS450 Software Engineering, Campbellsville University · **Current release: [v1.0.0](RELEASE_NOTES.md)**
 
 LabLink lets students and faculty reserve lab rooms and equipment online, and lets lab managers keep
 the inventory up to date and approve requests. It replaces sign-up sheets and email threads with one
@@ -16,6 +16,7 @@ place that shows what is free, prevents double bookings, and keeps a history of 
 - [Installation and setup](#installation-and-setup)
 - [Running the application](#running-the-application)
 - [Running the tests](#running-the-tests)
+- [User guide](#user-guide)
 - [API documentation](#api-documentation)
 - [Configuration](#configuration)
 - [Deployment and operations](#deployment-and-operations)
@@ -143,19 +144,25 @@ Production never loads the demo data; see [docs/deployment.md](docs/deployment.m
 mvn verify
 ```
 
-This runs, in order: **Checkstyle** lint → **163 unit and integration tests** (JUnit 5, Mockito, Spring Boot
-test slices against H2) → packages the `.jar` → **JaCoCo** coverage check (fails below 70 % line coverage in
+This runs, in order: **Checkstyle** lint → **176 tests**: unit and integration tests (JUnit 5, Mockito, Spring Boot
+test slices against H2) plus **13 end-to-end system tests** that start the whole app on a real port and drive it
+over HTTP like a browser → packages the `.jar` → **JaCoCo** coverage check (fails below 70 % line coverage in
 the `service` package).
 
 | Command | What it does |
 |---|---|
 | `mvn test` | Tests only |
 | `mvn test -Dtest=ReservationServiceTest` | One test class |
+| `mvn test -Dtest=EndToEndSystemTest` | The 13 end-to-end system scenarios ([results](docs/system-test-report.md)) |
 | `mvn checkstyle:check` | Lint only (run before pushing) |
 | `mvn verify` then open `target/site/jacoco/index.html` | Coverage report |
 
 GitHub Actions runs three checks on every push and pull request: **Lint**, **Build & Test**, and
 **Docker Smoke Test** (builds the image, starts it with MySQL, and checks the health endpoint, login page and API).
+
+## User guide
+
+Step-by-step instructions for students, faculty and lab managers: **[docs/user-guide.md](docs/user-guide.md)**.
 
 ## API documentation
 
@@ -215,7 +222,7 @@ src/main/resources/
   db/migration/ Flyway migration scripts (V1__..V4__) that build the schema
   db/seed/      Demo/test data (R__seed_test_data.sql)
   templates/    Thymeleaf pages
-src/test/java/  Unit and integration tests
+src/test/java/  Unit, integration and end-to-end system tests (e2e/)
 deploy/         Production files: Caddyfile (HTTPS proxy), backup.sh
 docs/           Design documents, UML, ADRs, project plan, API, deployment and operations
 Dockerfile, docker-compose.yml, docker-compose.prod.yml, .env.example
@@ -252,6 +259,11 @@ Code conventions:
 - Isaiah Bain — Reservations, Code Review Lead
 - Dawson Brown — Front End, UI/UX Lead
 - PJ — Database, Inventory, QA/DevOps
+
+## Releases
+
+Versions follow [Semantic Versioning](https://semver.org/) and are Git tags (`v1.0.0`).
+What's in each release, known issues and planned work: [RELEASE_NOTES.md](RELEASE_NOTES.md).
 
 ## License
 
