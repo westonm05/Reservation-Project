@@ -1,0 +1,42 @@
+# Production overrides. Use together with the base file:
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+# Differences from local: no demo data, a pinned image tag, memory limits, and the app is only
+# reachable through Caddy, which serves HTTPS with an automatic Let's Encrypt certificate.
+# Full walkthrough: docs/deployment.md
+
+services:
+  db:
+    deploy:
+      resources:
+        limits:
+          memory: 1g
+
+  app:
+    image: ${LABLINK_IMAGE:-lablink:latest}
+    environment:
+      SPRING_PROFILES_ACTIVE: mysql          # schema only - never the seed profile in production
+    ports: !reset []                         # not published; Caddy is the only way in
+    expose:
+      - "8080"
+    deploy:
+      resources:
+        limits:
+          memory: 768m
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    depends_on:
+      app:
+        condition: service_healthy
+    environment:
+      LABLINK_DOMAIN: ${LABLINK_DOMAIN:?set LABLINK_DOMAIN in .env}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+
+volumes:
+  caddy-data:

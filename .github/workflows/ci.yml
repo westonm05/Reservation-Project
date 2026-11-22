@@ -1,8 +1,10 @@
 # CI pipeline: runs on every push and on every pull request into main.
-# Two jobs run side by side, and each shows up as its own check on the pull request:
+# Three jobs run side by side, and each shows up as its own check on the pull request:
 #   - "Lint"          runs Checkstyle (config/checkstyle/checkstyle.xml) and marks problems on the PR diff
 #   - "Build & Test"  compiles the app, runs every unit and integration test, checks coverage,
 #                     and packages the runnable .jar
+#   - "Docker Smoke Test" builds the Docker image, starts the app + MySQL with docker compose,
+#                     and checks the health endpoint, the login page and the REST API respond
 # A red X on a pull request means something is broken. Branch protection on main
 # requires both checks to pass before the PR can be merged.
 name: CI
@@ -85,3 +87,28 @@ jobs:
           name: lablink-jar
           path: target/lablink-*.jar
           if-no-files-found: error
+
+  docker-smoke-test:
+    name: Docker Smoke Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      # --wait blocks until both containers report "healthy" (or fails after the timeout).
+      - name: Build image and start the stack
+        run: docker compose up -d --build --wait --wait-timeout 300
+      - name: Health endpoint reports UP
+        run: curl -fsS http://localhost:8080/actuator/health | tee /dev/stderr | grep -q '"status":"UP"'
+      - name: Login page loads
+        run: curl -fsS -o /dev/null -w '%{http_code}\n' http://localhost:8080/login
+      - name: REST API returns the seeded labs from MySQL
+        run: curl -fsS http://localhost:8080/api/labs | tee /dev/stderr | grep -q '"name"'
+      - name: Container status
+        if: always()
+        run: docker compose ps
+      - name: App logs
+        if: always()
+        run: docker compose logs app --tail 200
+      - name: Stop the stack
+        if: always()
+        run: docker compose down -v

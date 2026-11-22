@@ -1,5 +1,6 @@
 package edu.campbellsville.lablink.repository;
 
+import edu.campbellsville.lablink.model.Role;
 import edu.campbellsville.lablink.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -17,4 +18,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
     boolean existsByEmail(String email);
 
     List<User> findAllByOrderByFullNameAsc();
+
+    boolean existsByRole(Role role);
 }

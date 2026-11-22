@@ -26,6 +26,9 @@ public class SecurityConfig {
                 .requestMatchers("/login", "/register", "/css/**", "/error").permitAll()
                 // the public, read-only availability API (backlog 3.6): GET only, no login needed
                 .requestMatchers(HttpMethod.GET, "/api/**").permitAll()
+                // health check for Docker / the load balancer; everything else in Actuator is lab managers only
+                .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
+                .requestMatchers("/actuator/**").hasRole(LAB_MANAGER)
                 // lab managers only: changing inventory and reviewing requests
                 .requestMatchers("/labs/new", "/labs/*/edit", "/labs/*/delete", "/labs/save").hasRole(LAB_MANAGER)
                 .requestMatchers("/equipment/new", "/equipment/*/edit", "/equipment/*/delete", "/equipment/save").hasRole(LAB_MANAGER)

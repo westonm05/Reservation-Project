@@ -1,0 +1,62 @@
+# Runs LabLink and its MySQL database together:   docker compose up --build
+# Then open http://localhost:8080.  Stop with:     docker compose down
+# (add -v to also delete the database volume and start fresh)
+#
+# Settings come from a .env file next to this one (copy .env.example). Every value has a
+# safe local default, so the stack also starts with no .env at all.
+
+services:
+  db:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: lablink
+      MYSQL_USER: ${DB_USERNAME:-lablink}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-lablink-local-only}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root-local-only}
+      TZ: ${TZ:-America/New_York}
+    volumes:
+      - db-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+    # No "ports:" on purpose - only the app container can reach the database.
+
+  app:
+    build: .
+    image: lablink:latest
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy   # wait until MySQL accepts connections
+    environment:
+      # "mysql,seed" loads the demo accounts for local runs and demos.
+      # Production uses just "mysql" (see docs/deployment.md).
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-mysql,seed}
+      TZ: ${TZ:-America/New_York}   # reservation rules use local time; see Dockerfile
+      # Default points at the db container. Set DB_URL in .env to use a managed MySQL instead.
+      DB_URL: ${DB_URL:-jdbc:mysql://db:3306/lablink?allowPublicKeyRetrieval=true&useSSL=false}
+      DB_USERNAME: ${DB_USERNAME:-lablink}
+      DB_PASSWORD: ${DB_PASSWORD:-lablink-local-only}
+      LABLINK_ADMIN_EMAIL: ${LABLINK_ADMIN_EMAIL:-}
+      LABLINK_ADMIN_PASSWORD: ${LABLINK_ADMIN_PASSWORD:-}
+      JAVA_OPTS: ${JAVA_OPTS:--XX:MaxRAMPercentage=75 -XX:+ExitOnOutOfMemoryError}
+    ports:
+      - "${APP_PORT:-8080}:8080"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/actuator/health/readiness"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 60s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"   # rotate logs so they can't fill the disk
+        max-file: "5"
+
+volumes:
+  db-data:

@@ -15,3 +15,9 @@ buildNumber.properties
 .project
 # JDT-specific (Eclipse Java Development Tools)
 .classpath
+
+# Local secrets for docker compose (copy .env.example)
+.env
+
+# Database backups made on a server
+backups/
